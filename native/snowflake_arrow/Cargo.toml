@@ -1,0 +1,25 @@
+[package]
+name = "snowflake_arrow"
+version = "0.1.0"
+edition = "2021"
+authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "snowflake_arrow"
+path = "src/lib.rs"
+crate-type = ["rlib", "dylib"]
+
+[dependencies]
+rustler = "0.25.0"
+arrow2 = { version  = "0.11.2", features = ["io_ipc", "simd"] }
+chrono = "0.4"
+#serde_rustler = {git = "https://github.com/joshuataylor/serde_rustler", branch = "bump-versions"}
+#serde = {version = "1.0.137", features=["alloc", "derive"]}
+#arrow2 = { path ="/home/josh/dev/arrow2", features = ["io_ipc", "simd", "serde_types"] }
+#serde_json = "1.0.81"
+#base64 = "0.13.0"
+#flate2 = "1.0"
+#flate2 = { version = "1.0.17", features = ["zlib-ng"], default-features = false }
+#libdeflater = "0.8.0"

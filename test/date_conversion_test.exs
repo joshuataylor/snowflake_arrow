@@ -1,0 +1,19 @@
+defmodule SnowflakeArrow.DateConversionTest do
+  use ExUnit.Case, async: true
+  alias SnowflakeArrow.Native
+
+  test "Can convert nulls and dates to correct without elixir types" do
+    data =
+      File.read!(
+        Path.join([
+          :code.priv_dir(:snowflake_arrow),
+          "testing/base64/SF_DATE.arrow"
+        ])
+      )
+      |> Base.decode64!()
+
+    values = Native.convert_arrow_stream(data, false)
+
+    assert values == [[nil, nil, nil, "2024-05-26", nil, nil, nil, nil, nil, "2022-07-30"]]
+  end
+end
