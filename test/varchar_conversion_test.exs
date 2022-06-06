@@ -14,8 +14,19 @@ defmodule SnowflakeArrow.TextConversionTest do
 
     values = Native.convert_arrow_stream(data, false)
 
-    assert values == [
-             [nil, nil, "fF7Lk7YKfXtYFsY2fVXN", nil, "dvhJoe9A0qtgRJwHFMHN", nil, nil, "dBmT57wW3U0pLaJp9PGV", nil, "XRFjUy5wdbzE7k1z9SSa"]
+    assert values["SF_VARCHAR"] == [
+             [
+               nil,
+               nil,
+               "fF7Lk7YKfXtYFsY2fVXN",
+               nil,
+               "dvhJoe9A0qtgRJwHFMHN",
+               nil,
+               nil,
+               "dBmT57wW3U0pLaJp9PGV",
+               nil,
+               "XRFjUy5wdbzE7k1z9SSa"
+             ]
            ]
   end
 end

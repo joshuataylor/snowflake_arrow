@@ -14,7 +14,7 @@ defmodule SnowflakeArrow.NumericConversionTest do
 
     values = Native.convert_arrow_stream(data, true)
 
-    assert values == [
+    assert values["SF_INTEGER"] == [
              [
                13_171_725_832,
                nil,

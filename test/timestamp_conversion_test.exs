@@ -16,7 +16,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
 
     values = Native.convert_arrow_stream(data, false)
 
-    assert values == [
+    assert values["SF_TIMESTAMP"] == [
              [
                nil,
                nil,
@@ -44,7 +44,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
 
     values = Native.convert_arrow_stream(data, false)
 
-    assert values == [
+    assert values["SF_TIMESTAMP_NTZ"] == [
              [
                "2024-07-22 07:16:17.484",
                nil,
@@ -72,7 +72,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
 
     values = Native.convert_arrow_stream(data, false)
 
-    assert values == [
+    assert values["SF_TIMESTAMP_LTZ"] == [
              [
                nil,
                "2023-09-06 04:56:28",

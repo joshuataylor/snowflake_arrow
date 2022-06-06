@@ -1,21 +1,20 @@
 mod elixir_types;
+use crate::atoms::nil;
 use arrow2::array::{
-    Array, BooleanArray, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array, StructArray,
-    Utf8Array,
+    BinaryArray, BooleanArray, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
+    StructArray, Utf8Array,
 };
-use arrow2::chunk::Chunk;
 use arrow2::datatypes::{DataType, Metadata};
-use arrow2::error::{ArrowError as Error, Result};
 use arrow2::io::ipc::read;
+use arrow2::io::ipc::read::StreamMetadata;
 use arrow2::temporal_conversions::date32_to_date;
-use chrono::{NaiveDateTime};
+use chrono::NaiveDateTime;
 use rustler::types::binary::Binary;
 use rustler::{Encoder, Env, Term};
 use std::any::Any;
-use std::sync::Arc;
-use arrow2::io::ipc::read::StreamMetadata;
+use std::collections::HashMap;
 
-// #[derive(Serialize)]
+#[derive(Clone)]
 pub enum ReturnType<'a> {
     Int32(Vec<Option<&'a i32>>),
     Int64(Vec<Option<&'a i64>>),
@@ -25,7 +24,8 @@ pub enum ReturnType<'a> {
     Utf8(Vec<Option<&'a str>>),
     Boolean(Vec<Option<bool>>),
     String(Vec<Option<String>>),
-    Missing,
+    Binary(Vec<Option<&'a [u8]>>),
+    Missing(String),
 }
 
 mod atoms {
@@ -40,7 +40,7 @@ mod atoms {
 rustler::init!("Elixir.SnowflakeArrow.Native", [convert_arrow_stream]);
 // use rayon::prelude::*;
 
-fn metadata_for_field(metadata: StreamMetadata, index: u32) -> Metadata {
+fn metadata_for_field(metadata: &StreamMetadata, index: u32) -> Metadata {
     return metadata
         .schema
         .fields
@@ -50,103 +50,157 @@ fn metadata_for_field(metadata: StreamMetadata, index: u32) -> Metadata {
         .clone();
 }
 
-#[rustler::nif]
+fn name_for_field(metadata: &StreamMetadata, index: u32) -> &String {
+    return &metadata.schema.fields.get(index as usize).unwrap().name;
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn convert_arrow_stream<'a>(
     env: Env<'a>,
     arrow_stream_data: Binary,
     _cast_elixir_types: bool,
 ) -> Term<'a> {
-    let (metadata, chunk) = convert_binary(arrow_stream_data).unwrap();
-    chunk
-        .iter()
-        .enumerate()
-        .map(|(field_index, field)| {
-            let field_metadata = metadata_for_field(metadata.clone(), field_index as u32);
+    let mut binary = arrow_stream_data.as_ref();
+    let mut columns: HashMap<String, Vec<Term>> = HashMap::new();
 
-            let column = field.as_any();
-            match field.data_type() {
-                DataType::Int64 => ReturnType::Int64(
-                    column
-                        .downcast_ref::<Int64Array>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                // // .encode(env),
-                DataType::Int32 => ReturnType::Int32(
-                    column
-                        .downcast_ref::<Int32Array>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                DataType::Float64 => ReturnType::Float64(
-                    column
-                        .downcast_ref::<Float64Array>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                // .encode(env),
-                DataType::Int16 => ReturnType::Int16(
-                    column
-                        .downcast_ref::<Int16Array>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                DataType::Int8 => ReturnType::Int8(
-                    column
-                        .downcast_ref::<Int8Array>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                // // .encode(env),
-                DataType::Utf8 => ReturnType::Utf8(
-                    column
-                        .downcast_ref::<Utf8Array<i32>>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                // // .encode(env),
-                DataType::Date32 =>
-                // Not sure if this is the best way to convert into NaiveDates
-                {
-                    ReturnType::String(
-                        column
-                            .downcast_ref::<Int32Array>()
-                            .unwrap()
-                            .iter()
-                            .map(|t| match t {
-                                Some(v) => Some(date32_to_date(*v).to_string()),
-                                None => None,
-                            })
-                            .collect::<Vec<Option<String>>>(),
-                    )
-                }
-                DataType::Boolean => ReturnType::Boolean(
-                    column
-                        .downcast_ref::<BooleanArray>()
-                        .unwrap()
-                        .iter()
-                        .collect::<Vec<_>>(),
-                ),
-                DataType::Struct(_f) => {
-                    let logical_type = field_metadata.get("logicalType").unwrap().as_str();
-                    match logical_type {
-                        "TIMESTAMP_NTZ" | "TIMESTAMP_LTZ" => {
-                            return ReturnType::String(convert_timestamps(column));
-                        }
-                        _ => ReturnType::Missing,
+    // We want the metadata later for checking types
+    let metadata = read::read_stream_metadata(&mut binary).unwrap();
+    for field in &metadata.schema.fields {
+        columns.insert(field.name.clone(), vec![]);
+    }
+    let mut stream = read::StreamReader::new(&mut binary, metadata.clone());
+    let _foo: Vec<Vec<Option<&[u8]>>> = vec![];
+
+    loop {
+        match stream.next() {
+            Some(x) => match x {
+                Ok(read::StreamState::Some(chunk)) => {
+                    let mut fields_hashmaps2: HashMap<String, Vec<Term>> = HashMap::new();
+                    for field in &metadata.schema.fields {
+                        fields_hashmaps2.insert(field.name.clone(), vec![]);
+                    }
+
+                    let mut field_index = 0;
+
+                    for field in chunk.arrays() {
+                        let total_columns = field.len();
+                        let field_metadata = metadata_for_field(&metadata, field_index as u32);
+                        let field_name = name_for_field(&metadata, field_index as u32);
+                        let column = field.as_any();
+
+                        let encoded = match field.data_type() {
+                            DataType::Int64 => column
+                                .downcast_ref::<Int64Array>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+                            DataType::Int32 => {
+                                if field_metadata.get("scale").unwrap() == "0" {
+                                    column
+                                        .downcast_ref::<Int32Array>()
+                                        .unwrap()
+                                        .iter()
+                                        .collect::<Vec<_>>()
+                                        .encode(env)
+                                } else {
+                                    let scale = field_metadata
+                                        .get("scale")
+                                        .unwrap()
+                                        .parse::<i32>()
+                                        .unwrap();
+                                    let int32_array = column.downcast_ref::<Int32Array>().unwrap();
+                                    let mut float_vecs: Vec<Option<f64>> = Vec::new();
+
+                                    for valid in int32_array {
+                                        match valid {
+                                            Some(x) => {
+                                                float_vecs.push(Some(
+                                                    x.clone() as f64 / 10f64.powi(scale),
+                                                ));
+                                            }
+                                            None => float_vecs.push(None),
+                                        }
+                                    }
+
+                                    float_vecs.encode(env)
+                                }
+                            }
+                            DataType::Float64 => column
+                                .downcast_ref::<Float64Array>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+                            DataType::Int16 => column
+                                .downcast_ref::<Int16Array>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+                            DataType::Int8 => column
+                                .downcast_ref::<Int8Array>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+                            DataType::Utf8 => column
+                                .downcast_ref::<Utf8Array<i32>>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+
+                            DataType::Date32 => column
+                                .downcast_ref::<Int32Array>()
+                                .unwrap()
+                                .iter()
+                                .map(|t| match t {
+                                    Some(v) => Some(date32_to_date(*v).to_string()),
+                                    None => None,
+                                })
+                                .collect::<Vec<Option<String>>>()
+                                .encode(env),
+
+                            DataType::Boolean => column
+                                .downcast_ref::<BooleanArray>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+
+                            DataType::Binary => column
+                                .downcast_ref::<BinaryArray<i32>>()
+                                .unwrap()
+                                .iter()
+                                .collect::<Vec<_>>()
+                                .encode(env),
+
+                            DataType::Struct(_f) => {
+                                let logical_type =
+                                    field_metadata.get("logicalType").unwrap().as_str();
+                                match logical_type {
+                                    "TIMESTAMP_NTZ" | "TIMESTAMP_LTZ" | "TIMESTAMP_TZ" => {
+                                        convert_timestamps(column).encode(env)
+                                    }
+                                    _a => vec![nil(); total_columns].encode(env),
+                                }
+                            }
+                            // a => a.to_string().encode(env), //field.data_type().to_string().encode(env), //,
+                            _a => vec![nil(); total_columns].encode(env),
+                        };
+                        columns.get_mut(field_name).unwrap().push(encoded);
+                        field_index += 1;
                     }
                 }
-                _ => ReturnType::Missing, //field.data_type().to_string(),
-            }
-        })
-        .collect::<Vec<ReturnType>>()
-        .encode(env)
+                Ok(read::StreamState::Waiting) => break,
+                Err(_l) => break,
+            },
+            None => break,
+        };
+    }
+
+    return columns.encode(env);
 }
 
 fn convert_timestamps(column: &dyn Any) -> Vec<Option<String>> {
@@ -180,49 +234,4 @@ fn convert_timestamps(column: &dyn Any) -> Vec<Option<String>> {
         }
     }
     return date_vec;
-}
-
-// Converts a Elixir binary to Chunk<Arc<dyn Array>> using arrow2
-pub fn convert_binary(
-    arrow_stream_data: Binary,
-) -> Result<(StreamMetadata, Chunk<Arc<dyn Array>>)> {
-    let mut binary = arrow_stream_data.as_ref();
-
-    // We want the metadata later for checking types
-    let metadata = read::read_stream_metadata(&mut binary).unwrap();
-    let mut stream = read::StreamReader::new(&mut binary, metadata.clone());
-
-    // Could just return the chunk via unwrap(), but it's a negligible difference
-    loop {
-        match stream.next() {
-            Some(x) => match x {
-                Ok(read::StreamState::Some(b)) => {
-                    return Ok((metadata, b));
-                }
-                Ok(read::StreamState::Waiting) => break,
-                Err(l) => return Err(l),
-            },
-            None => break,
-        };
-    }
-
-    return Err(Error::OutOfSpec(
-        "Couldn't parse file due to unknown reason".to_string(),
-    ));
-}
-
-impl<'b> Encoder for ReturnType<'b> {
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        match self {
-            ReturnType::Int32(a) => a.encode(env),
-            ReturnType::Int64(a) => a.encode(env),
-            ReturnType::Float64(a) => a.encode(env),
-            ReturnType::Int16(a) => a.encode(env),
-            ReturnType::Int8(a) => a.encode(env),
-            ReturnType::Utf8(a) => a.encode(env),
-            ReturnType::String(a) => a.encode(env),
-            ReturnType::Boolean(a) => a.encode(env),
-            ReturnType::Missing => "missing".encode(env),
-        }
-    }
 }
