@@ -1,7 +1,4 @@
-#![feature(iterator_try_collect)]
-
 mod serialize;
-
 use crate::serialize::new_serializer;
 use arrow2::array::Array;
 use arrow2::chunk::Chunk;
@@ -13,10 +10,10 @@ use rustler::{Encoder, Env, Term};
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Debug, Clone)]
 pub enum ReturnType<'a> {
     Int32(Vec<Option<&'a i32>>),
     Int64(Vec<Option<&'a i64>>),
+    // Float64(Vec<Option<f64>>),
     Float64(Vec<Option<f64>>),
     Int16(Vec<Option<&'a i16>>),
     Int8(Vec<Option<&'a i8>>),
@@ -39,13 +36,13 @@ mod atoms {
 rustler::init!("Elixir.SnowflakeArrow.Native", [convert_arrow_stream]);
 
 #[rustler::nif]
+#[inline]
 pub fn convert_arrow_stream<'a>(
     env: Env<'a>,
     arrow_stream_data: Binary,
     _cast_elixir_types: bool,
 ) -> Term<'a> {
     let mut d = arrow_stream_data.as_ref();
-    let mut columns: HashMap<String, Vec<ReturnType>> = HashMap::new();
 
     // We want the metadata later for checking types
     let metadata = read::read_stream_metadata(&mut d).unwrap();
@@ -53,12 +50,8 @@ pub fn convert_arrow_stream<'a>(
     let mut field_metadata: HashMap<usize, Metadata> = HashMap::new();
 
     for (i, field) in metadata.schema.fields.iter().enumerate() {
-        let rett: Vec<ReturnType> = Vec::new();
-        columns.insert(field.name.clone(), rett.clone());
-        // columns2.insert(i, rett.clone());
         field_metadata.insert(i, field.metadata.clone());
     }
-    let _column_vecs: Vec<Vec<ReturnType>> = vec![vec![]; metadata.schema.fields.len()];
 
     let mut stream = read::StreamReader::new(&mut d, metadata.clone());
     let mut chunks: Vec<Chunk<Arc<dyn Array>>> = vec![];
@@ -73,28 +66,28 @@ pub fn convert_arrow_stream<'a>(
             None => break,
         }
     }
+
     chunks
         .par_iter()
-        .map(|chunk| {
+        .flat_map(|chunk| {
             chunk
                 .iter()
                 .enumerate()
                 .map(|(field_index, array)| {
                     let fm = field_metadata.get(&field_index).unwrap();
-                    let rt = new_serializer(&fm, array);
+                    let return_type = new_serializer(&fm, array);
                     let field_name = metadata.schema.fields[field_index].name.clone();
 
-                    (field_name, rt)
+                    (field_name, return_type)
                 })
-                .collect::<Vec<(String, ReturnType)>>()
+                .collect::<HashMap<String, ReturnType>>()
         })
-        .collect::<Vec<Vec<(String, ReturnType<'_>)>>>()
+        .collect::<HashMap<String, ReturnType<'_>>>()
         .encode(env)
-
-    // return values.encode(env);
 }
 
 impl<'b> Encoder for ReturnType<'_> {
+    #[inline]
     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
         match self {
             ReturnType::Int32(a) => a.encode(env),

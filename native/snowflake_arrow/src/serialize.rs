@@ -4,41 +4,40 @@ use arrow2::array::*;
 use arrow2::datatypes::{DataType, Metadata};
 use arrow2::temporal_conversions::date32_to_date;
 use chrono::NaiveDateTime;
-use rayon::prelude::*;
 use std::any::Any;
 use std::sync::Arc;
 
-macro_rules! primitive_vec {
-    ($ty:ty, $array:expr, $data_type: expr) => {{
-        $data_type(
-            $array
-                .as_any()
-                .downcast_ref::<PrimitiveArray<$ty>>()
-                .unwrap()
-                .iter()
-                .collect::<Vec<Option<&$ty>>>(),
-        )
-    }};
-}
-
-macro_rules! array_vec {
-    ($ty:ty, $array:expr, $data_type: expr, $x: ty) => {{
-        $data_type(
-            $array
-                .as_any()
-                .downcast_ref::<$x>()
-                .unwrap()
-                .iter()
-                .collect::<Vec<Option<$ty>>>(),
-        )
-    }};
-}
-
-#[inline(always)]
+#[inline]
 pub fn new_serializer<'a>(field_metadata: &Metadata, array: &'a Arc<dyn Array>) -> ReturnType<'a> {
     match array.data_type() {
-        DataType::Int64 => primitive_vec!(i64, array, ReturnType::Int64),
-        DataType::Boolean => array_vec!(bool, array, ReturnType::Boolean, BooleanArray),
+        DataType::Int64 => ReturnType::Int64(
+            array
+                .as_any()
+                .downcast_ref::<PrimitiveArray<i64>>()
+                .unwrap()
+                .iter()
+                .collect::<Vec<Option<&i64>>>(),
+        ),
+        DataType::Float64 => ReturnType::Float64(
+            array
+                .as_any()
+                .downcast_ref::<PrimitiveArray<f64>>()
+                .unwrap()
+                .iter()
+                .map(|x| match x {
+                    Some(x) => Some(*x),
+                    None => None,
+                })
+                .collect::<Vec<Option<f64>>>(),
+        ),
+        DataType::Boolean => ReturnType::Boolean(
+            array
+                .as_any()
+                .downcast_ref::<BooleanArray>()
+                .unwrap()
+                .iter()
+                .collect::<Vec<Option<bool>>>(),
+        ),
         DataType::Utf8 => ReturnType::Utf8(
             array
                 .as_any()
@@ -81,32 +80,30 @@ pub fn new_serializer<'a>(field_metadata: &Metadata, array: &'a Arc<dyn Array>) 
                 "TIMESTAMP_NTZ" | "TIMESTAMP_LTZ" | "TIMESTAMP_TZ" => {
                     ReturnType::String(convert_timestamps(array.as_any()))
                 }
-                _a => ReturnType::Missing(vec![Some("x".to_string())]),
+                _a => ReturnType::Missing(vec![Some("".to_string())]),
             }
         }
 
-        _ => ReturnType::Missing(vec![Some("x".to_string())]),
+        _ => ReturnType::Missing(vec![Some("missing value".to_string())]),
     }
 }
 
-#[inline(always)]
-fn float_to_vecs(array: &Arc<dyn Array>, scale: i32) -> Vec<Option<f64>> {
+#[inline]
+pub fn float_to_vecs(array: &Arc<dyn Array>, scale: i32) -> Vec<Option<f64>> {
     array
         .as_any()
         .downcast_ref::<Int32Array>()
         .unwrap()
         .iter()
-        .collect::<Vec<Option<&i32>>>()
-        .par_iter()
         .map(|t| match t {
-            Some(v) => Some(**v as f64 / 10f64.powi(scale)),
+            Some(v) => Some(*v as f64 / 10f64.powi(scale)),
             None => None,
         })
         .collect::<Vec<Option<f64>>>()
 }
 
-#[inline(always)]
-fn convert_timestamps(column: &dyn Any) -> Vec<Option<String>> {
+#[inline]
+pub fn convert_timestamps(column: &dyn Any) -> Vec<Option<String>> {
     let (_fields, arrays, _bitmap) = column
         .downcast_ref::<StructArray>()
         .unwrap()
@@ -134,7 +131,7 @@ fn convert_timestamps(column: &dyn Any) -> Vec<Option<String>> {
         .collect::<Vec<Option<String>>>()
 }
 
-#[inline(always)]
+#[inline]
 pub fn date32_to_dates(array: &Arc<dyn Array>) -> Vec<Option<String>> {
     array
         .as_any()

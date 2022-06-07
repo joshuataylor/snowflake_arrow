@@ -14,8 +14,17 @@ defmodule SnowflakeArrow.FloatConversionTest do
 
     values = Native.convert_arrow_stream(data, true)
 
-    assert values == [
-             [nil, 10362.79846742, nil, nil, nil, 16728.54054275, nil, nil, 19064.12377525, nil]
+    assert values["SF_FLOAT"] == [
+             nil,
+             10362.79846742,
+             nil,
+             nil,
+             nil,
+             16728.54054275,
+             nil,
+             nil,
+             19064.12377525,
+             nil
            ]
   end
 
@@ -31,8 +40,17 @@ defmodule SnowflakeArrow.FloatConversionTest do
 
     values = Native.convert_arrow_stream(data, true)
 
-    assert values == [
-             [3563.39, nil, 26800.24, 13280.73, nil, nil, 9806.23, 18247.51, 19212.24, nil]
+    assert values["SF_FLOAT_TWO_PRECISION"] == [
+             3563.39,
+             nil,
+             26800.24,
+             13280.73,
+             nil,
+             nil,
+             9806.23,
+             18247.51,
+             19212.24,
+             nil
            ]
   end
 end
