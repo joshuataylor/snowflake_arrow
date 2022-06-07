@@ -3,13 +3,16 @@ linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=mold", "-C", "target-cpu=native"]
 #rustflags = ["-C", "link-arg=-fuse-ld=mold"]
 
-[target.'cfg(target_os = "macos")']
+[target.aarch64-apple-darwin]
 rustflags = [
     "-C", "link-arg=-fuse-ld=/usr/local/bin/zld",
     "-C", "link-arg=-undefined",
-    "-C", "link-arg=dynamic_lookup"
+    "-C", "link-arg=dynamic_lookup",
+    "-C", "target-cpu=native",
+#    "-C", "target-feature=+v7",
 ]
 
 [profile.release]
 lto = true
 codegen-units = 1
+#debug = true
