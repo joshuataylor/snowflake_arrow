@@ -1,4 +1,4 @@
-mod serialize;
+pub mod serialize;
 use crate::serialize::new_serializer;
 use arrow2::array::Array;
 use arrow2::chunk::Chunk;
@@ -11,17 +11,17 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 pub enum ReturnType<'a> {
-    Int32(Vec<Option<&'a i32>>),
-    Int64(Vec<Option<&'a i64>>),
-    // Float64(Vec<Option<f64>>),
-    Float64(Vec<Option<f64>>),
-    Int16(Vec<Option<&'a i16>>),
-    Int8(Vec<Option<&'a i8>>),
-    Utf8(Vec<Option<&'a str>>),
-    Boolean(Vec<Option<bool>>),
-    String(Vec<Option<String>>),
-    Binary(Vec<Option<&'a [u8]>>),
-    Missing(Vec<Option<String>>),
+    Int32(Option<&'a i32>),
+    Int64(Option<&'a i64>),
+    // Float64(Option<f64>),
+    Float64(Option<f64>),
+    Int16(Option<&'a i16>),
+    Int8(Option<&'a i8>),
+    Utf8(Option<&'a str>),
+    Boolean(Option<bool>),
+    String(Option<String>),
+    Binary(Option<&'a [u8]>),
+    Missing(Option<String>),
 }
 
 mod atoms {
@@ -66,9 +66,8 @@ pub fn convert_arrow_stream<'a>(
             None => break,
         }
     }
-
     chunks
-        .par_iter()
+        .iter()
         .flat_map(|chunk| {
             chunk
                 .iter()
@@ -80,12 +79,13 @@ pub fn convert_arrow_stream<'a>(
 
                     (field_name, return_type)
                 })
-                .collect::<HashMap<String, ReturnType>>()
+                .collect::<HashMap<String, Vec<ReturnType<'_>>>>()
         })
-        .collect::<HashMap<String, ReturnType<'_>>>();
-        // .encode(env)
-
-    barb.encode(env)
+        .fold(HashMap::new(), |mut acc, (key, rt)| {
+            acc.entry(key).or_insert_with(|| vec![]).extend(rt);
+            acc
+        })
+        .encode(env)
 }
 
 impl<'b> Encoder for ReturnType<'_> {
@@ -102,7 +102,6 @@ impl<'b> Encoder for ReturnType<'_> {
             ReturnType::String(a) => a.encode(env),
             ReturnType::Boolean(a) => a.encode(env),
             ReturnType::Missing(x) => x.encode(env),
-            _ => "fallback missing".encode(env),
         }
     }
 }
