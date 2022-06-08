@@ -82,16 +82,19 @@ pub fn convert_arrow_stream<'a>(
                 })
                 .collect::<HashMap<String, ReturnType>>()
         })
-        .collect::<HashMap<String, ReturnType<'_>>>()
-        .encode(env)
+        .collect::<HashMap<String, ReturnType<'_>>>();
+        // .encode(env)
+
+    barb.encode(env)
 }
 
 impl<'b> Encoder for ReturnType<'_> {
     #[inline]
     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
         match self {
-            ReturnType::Int32(a) => a.encode(env),
             ReturnType::Int64(a) => a.encode(env),
+            ReturnType::Binary(a) => a.encode(env),
+            ReturnType::Int32(a) => a.encode(env),
             ReturnType::Float64(a) => a.encode(env),
             ReturnType::Int16(a) => a.encode(env),
             ReturnType::Int8(a) => a.encode(env),
@@ -99,7 +102,7 @@ impl<'b> Encoder for ReturnType<'_> {
             ReturnType::String(a) => a.encode(env),
             ReturnType::Boolean(a) => a.encode(env),
             ReturnType::Missing(x) => x.encode(env),
-            _ => "x".encode(env),
+            _ => "fallback missing".encode(env),
         }
     }
 }
