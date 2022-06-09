@@ -12,35 +12,49 @@ pub fn new_serializer<'a>(
     field_metadata: &Metadata,
     array: &'a Arc<dyn Array>,
     cast_elixir_types: bool,
-) -> Vec<ReturnType<'a>> {
+) -> Vec<ReturnType> {
     match array.data_type() {
         DataType::Int8 => array
             .as_any()
             .downcast_ref::<PrimitiveArray<i8>>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Int8(x))
+            .map(|x| match x {
+                Some(&x) => ReturnType::Int8(Some(x)),
+                None => ReturnType::Int8(None),
+            })
             .collect::<Vec<ReturnType>>(),
         DataType::Int16 => array
             .as_any()
             .downcast_ref::<PrimitiveArray<i16>>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Int16(x))
+            // .map(|x| ReturnType::Int16(x))
+            .map(|x| match x {
+                Some(&x) => ReturnType::Int16(Some(x)),
+                None => ReturnType::Int16(None),
+            })
             .collect::<Vec<ReturnType>>(),
         DataType::Int64 => array
             .as_any()
             .downcast_ref::<PrimitiveArray<i64>>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Int64(x))
+            .map(|x| match x {
+                Some(&x) => ReturnType::Int64(Some(x)),
+                None => ReturnType::Int64(None),
+            })
+            // .map(|x| ReturnType::Int64(x))
             .collect::<Vec<ReturnType>>(),
         DataType::Float64 => array
             .as_any()
             .downcast_ref::<PrimitiveArray<f64>>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Float64(x))
+            .map(|x| match x {
+                Some(&x) => ReturnType::Float64(Some(x)),
+                None => ReturnType::Float64(None),
+            })
             .collect::<Vec<ReturnType>>(),
         DataType::Boolean => array
             .as_any()
@@ -54,7 +68,7 @@ pub fn new_serializer<'a>(
             .downcast_ref::<Utf8Array<i32>>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Utf8(x))
+            .map(|x| ReturnType::String(x.map(|t| t.to_string())))
             .collect(),
         DataType::Date32 => date32_to_dates(array, cast_elixir_types),
         // Snowflake sends back floats in integers, I think it's because they
@@ -66,7 +80,10 @@ pub fn new_serializer<'a>(
                     .downcast_ref::<Int32Array>()
                     .unwrap()
                     .iter()
-                    .map(|x| ReturnType::Int32(x))
+                    .map(|x| match x {
+                        Some(&x) => ReturnType::Int32(Some(x)),
+                        None => ReturnType::Int32(None),
+                    })
                     .collect::<Vec<ReturnType>>()
             } else {
                 let scale = field_metadata.get("scale").unwrap().parse::<i32>().unwrap();
@@ -78,7 +95,7 @@ pub fn new_serializer<'a>(
             .downcast_ref::<BinaryArray<i32>>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Binary(x))
+            .map(|x| ReturnType::Binary(x.map(|t| t.to_vec())))
             .collect::<Vec<ReturnType>>(),
         DataType::Struct(_f) => {
             let logical_type = field_metadata.get("logicalType").unwrap().as_str();
@@ -89,8 +106,8 @@ pub fn new_serializer<'a>(
                 _ => unreachable!(),
             }
         }
-        x => {
-            println!("{}", x.to_string());
+        _x => {
+            // println!("{}", x.to_string());
             unreachable!()
         }
     }

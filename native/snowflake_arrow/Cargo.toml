@@ -16,8 +16,5 @@ chrono = "0.4"
 rayon = "1.5.3"
 
 [profile.release]
-# This is useful when profiling, because lets the tools include your
-# function names in the profiling reports.
-#debug = true
 lto = true
 codegen-units = 1

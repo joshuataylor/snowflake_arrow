@@ -10,7 +10,7 @@ use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use rayon::prelude::*;
 use rustler::types::binary::Binary;
 use rustler::NifStruct;
-
+use rustler::NifUntaggedEnum;
 use rustler::{Encoder, Env, Term};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -56,21 +56,19 @@ impl From<NaiveDateTime> for ElixirDateTime {
     }
 }
 
-#[derive(Debug)]
-pub enum ReturnType<'a> {
-    Int32(Option<&'a i32>),
-    Int64(Option<&'a i64>),
-    Float64(Option<&'a f64>),
-    Str(Option<&'a str>),
+#[derive(Debug, NifUntaggedEnum)]
+pub enum ReturnType {
+    Int32(Option<i32>),
+    Int64(Option<i64>),
+    Float64(Option<f64>),
     Float642(Option<f64>),
-    Int16(Option<&'a i16>),
-    Int8(Option<&'a i8>),
-    Utf8(Option<&'a str>),
+    Int16(Option<i16>),
+    Int8(Option<i8>),
     Boolean(Option<bool>),
+    Binary(Option<Vec<u8>>),
     String(Option<String>),
     Date(Option<ElixirDate>),
     DateTime(Option<ElixirDateTime>),
-    Binary(Option<&'a [u8]>),
     Missing(Option<String>),
 }
 
@@ -133,7 +131,7 @@ fn convert_arrow_stream<'a>(
                     let fm = field_metadata.get(&field_name).unwrap();
                     (field_name, new_serializer(fm, array, cast_elixir_types))
                 })
-                .collect::<HashMap<String, Vec<ReturnType<'_>>>>()
+                .collect::<HashMap<String, Vec<ReturnType>>>()
         })
         .fold(HashMap::new, |mut acc, (key, rt)| {
             acc.entry(key).or_insert_with(|| vec![]).extend(rt);
@@ -174,33 +172,11 @@ fn convert_arrow_stream<'a>(
                         let column_name = return_type_hashmap.values().nth(column_index).unwrap();
                         column_name.get(row_index).unwrap()
                     })
-                    .collect::<Vec<&ReturnType<'_>>>()
+                    .collect::<Vec<&ReturnType>>()
             })
             .collect::<Vec<Vec<&ReturnType>>>()
             .encode(env);
     }
 
     return_type_hashmap.encode(env)
-}
-
-impl<'b> Encoder for ReturnType<'_> {
-    #[inline]
-    fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        match self {
-            ReturnType::Int64(a) => a.encode(env),
-            ReturnType::Binary(a) => a.encode(env),
-            ReturnType::Int32(a) => a.encode(env),
-            ReturnType::Float64(a) => a.encode(env),
-            ReturnType::Int16(a) => a.encode(env),
-            ReturnType::Int8(a) => a.encode(env),
-            ReturnType::Utf8(a) => a.encode(env),
-            ReturnType::String(a) => a.encode(env),
-            ReturnType::Boolean(a) => a.encode(env),
-            ReturnType::Missing(x) => x.encode(env),
-            ReturnType::Float642(x) => x.encode(env),
-            ReturnType::Str(x) => x.encode(env),
-            ReturnType::Date(x) => x.encode(env),
-            ReturnType::DateTime(x) => x.encode(env),
-        }
-    }
 }
