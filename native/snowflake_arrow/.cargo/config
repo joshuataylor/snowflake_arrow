@@ -1,13 +1,10 @@
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-C", "link-arg=-fuse-ld=mold"]
-#rustflags = ["-C", "link-arg=-fuse-ld=mold"]
-
 [target.aarch64-apple-darwin]
 rustflags = [
-    "-C", "link-arg=-fuse-ld=/usr/local/bin/zld",
     "-C", "link-arg=-undefined",
-    "-C", "link-arg=dynamic_lookup",
-    "-C", "target-cpu=native",
-#    "-C", "target-feature=+v7",
+    "-C", "link-arg=dynamic_lookup"
 ]
+
+[profile.release]
+lto = true
+codegen-units = 1
+#debug = true

@@ -11,7 +11,10 @@ defmodule SnowflakeArrow.ChunkConversionTest do
         ])
       )
 
-    values = Native.convert_arrow_stream(data, false)
+    values = Native.convert_arrow_stream(data, false, false)
     assert values["SF_VARCHAR"] |> length == 1868
+
+    values = Native.convert_arrow_stream(data, false, true)
+    assert values |> length == 1868
   end
 end

@@ -11,8 +11,23 @@ use std::sync::Arc;
 pub fn new_serializer<'a>(
     field_metadata: &Metadata,
     array: &'a Arc<dyn Array>,
+    cast_elixir_types: bool,
 ) -> Vec<ReturnType<'a>> {
     match array.data_type() {
+        DataType::Int8 => array
+            .as_any()
+            .downcast_ref::<PrimitiveArray<i8>>()
+            .unwrap()
+            .iter()
+            .map(|x| ReturnType::Int8(x))
+            .collect::<Vec<ReturnType>>(),
+        DataType::Int16 => array
+            .as_any()
+            .downcast_ref::<PrimitiveArray<i16>>()
+            .unwrap()
+            .iter()
+            .map(|x| ReturnType::Int16(x))
+            .collect::<Vec<ReturnType>>(),
         DataType::Int64 => array
             .as_any()
             .downcast_ref::<PrimitiveArray<i64>>()
@@ -41,7 +56,7 @@ pub fn new_serializer<'a>(
             .iter()
             .map(|x| ReturnType::Utf8(x))
             .collect(),
-        DataType::Date32 => date32_to_dates(array),
+        DataType::Date32 => date32_to_dates(array, cast_elixir_types),
         // Snowflake sends back floats in integers, I think it's because they
         // were super early adopters of Arrow so they had to use what they could.
         DataType::Int32 => {
@@ -63,21 +78,21 @@ pub fn new_serializer<'a>(
             .downcast_ref::<BinaryArray<i32>>()
             .unwrap()
             .iter()
-            .map(|x| match &x {
-                Some(x) => ReturnType::Binary(Some(x)),
-                None => ReturnType::Binary(None),
-            })
+            .map(|x| ReturnType::Binary(x))
             .collect::<Vec<ReturnType>>(),
         DataType::Struct(_f) => {
             let logical_type = field_metadata.get("logicalType").unwrap().as_str();
             match logical_type {
                 "TIMESTAMP_NTZ" | "TIMESTAMP_LTZ" | "TIMESTAMP_TZ" => {
-                    convert_timestamps(array.as_any())
+                    convert_timestamps(array.as_any(), cast_elixir_types)
                 }
                 _ => unreachable!(),
             }
         }
-        _ => unreachable!(),
+        x => {
+            println!("{}", x.to_string());
+            unreachable!()
+        }
     }
 }
 
@@ -99,7 +114,7 @@ pub fn float_to_vecs(array: &Arc<dyn Array>, scale: i32) -> Vec<ReturnType> {
 }
 
 #[inline]
-pub fn convert_timestamps(column: &dyn Any) -> Vec<ReturnType> {
+pub fn convert_timestamps(column: &dyn Any, cast_elixir: bool) -> Vec<ReturnType> {
     let (_fields, arrays, _bitmap) = column
         .downcast_ref::<StructArray>()
         .unwrap()
@@ -120,25 +135,46 @@ pub fn convert_timestamps(column: &dyn Any) -> Vec<ReturnType> {
             Some(epoch) => {
                 let value1 = *epoch as i64;
                 let value2 = fractions.value(i);
-                ReturnType::String(Some(
-                    NaiveDateTime::from_timestamp(value1, value2 as u32).to_string(),
-                ))
+                let timestamp = NaiveDateTime::from_timestamp(value1, value2 as u32);
+                if cast_elixir {
+                    ReturnType::DateTime(Some(timestamp.into()))
+                } else {
+                    ReturnType::String(Some(timestamp.to_string()))
+                }
             }
-            None => ReturnType::String(None),
+            None => {
+                if cast_elixir {
+                    ReturnType::DateTime(None)
+                } else {
+                    ReturnType::String(None)
+                }
+            }
         })
         .collect::<Vec<ReturnType>>()
 }
 
 #[inline]
-pub fn date32_to_dates(array: &Arc<dyn Array>) -> Vec<ReturnType> {
+pub fn date32_to_dates(array: &Arc<dyn Array>, cast_elixir: bool) -> Vec<ReturnType> {
     array
         .as_any()
         .downcast_ref::<PrimitiveArray<i32>>()
         .unwrap()
         .iter()
         .map(|t| match t {
-            Some(t) => ReturnType::String(Some(date32_to_date(*t).to_string())),
-            None => ReturnType::String(None),
+            Some(t) => {
+                if cast_elixir {
+                    ReturnType::Date(Some(date32_to_date(*t).into()))
+                } else {
+                    ReturnType::String(Some(date32_to_date(*t).to_string()))
+                }
+            }
+            None => {
+                if cast_elixir {
+                    ReturnType::Date(None)
+                } else {
+                    ReturnType::String(None)
+                }
+            }
         })
         .collect::<Vec<ReturnType>>()
 }

@@ -12,8 +12,35 @@ defmodule SnowflakeArrow.BooleanConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, true)
+    values = Native.convert_arrow_stream(data, true, false)
 
-    assert values["SF_BOOLEAN"] == [nil, nil, nil, nil, nil, false, nil, true, nil, false]
+    assert values["SF_BOOLEAN"] == [
+             nil,
+             nil,
+             nil,
+             nil,
+             nil,
+             false,
+             nil,
+             true,
+             nil,
+             false
+           ]
+
+    values = Native.convert_arrow_stream(data, true, true)
+
+    # Transpose
+    assert values == [
+             [nil],
+             [nil],
+             [nil],
+             [nil],
+             [nil],
+             [false],
+             [nil],
+             [true],
+             [nil],
+             [false]
+           ]
   end
 end

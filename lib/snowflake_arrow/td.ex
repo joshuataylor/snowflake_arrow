@@ -1,3 +1,3 @@
-defmodule TestDate do
+defmodule ElixirDate do
   defstruct [:year, :month, :day]
 end

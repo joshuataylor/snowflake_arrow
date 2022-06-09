@@ -12,7 +12,7 @@ defmodule SnowflakeArrow.DecimalConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, true)
+    values = Native.convert_arrow_stream(data, true, false)
 
     assert values["SF_DECIMAL_38_2"] == [
              21885.79,
@@ -25,6 +25,21 @@ defmodule SnowflakeArrow.DecimalConversionTest do
              nil,
              17681.54,
              nil
+           ]
+
+    values = Native.convert_arrow_stream(data, true, true)
+
+    assert values == [
+             [21885.79],
+             [nil],
+             [nil],
+             [7395.6],
+             [26737.49],
+             [7479.49],
+             [21256.18],
+             [nil],
+             [17681.54],
+             [nil]
            ]
   end
 end

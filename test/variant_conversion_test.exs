@@ -14,7 +14,7 @@ defmodule SnowflakeArrow.VariantConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, false)
+    values = Native.convert_arrow_stream(data, false, false)
 
     assert values["SF_VARIANT_JSON"] == [
              nil,
@@ -40,7 +40,7 @@ defmodule SnowflakeArrow.VariantConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, false)
+    values = Native.convert_arrow_stream(data, false, false)
 
     assert values["SF_ARRAY"] ==
              [
@@ -67,7 +67,7 @@ defmodule SnowflakeArrow.VariantConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, false)
+    values = Native.convert_arrow_stream(data, false, false)
 
     assert values["SF_OBJECT"] == [
              "{\n  \"arr1_IQqqQ\": 13,\n  \"zero\": 0\n}",
