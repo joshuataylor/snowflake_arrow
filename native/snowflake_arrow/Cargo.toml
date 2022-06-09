@@ -14,3 +14,10 @@ rustler = "0.25.0"
 arrow2 = { version  = "0.12.0", features = ["io_ipc", "simd"] }
 chrono = "0.4"
 rayon = "1.5.3"
+
+[profile.release]
+# This is useful when profiling, because lets the tools include your
+# function names in the profiling reports.
+#debug = true
+lto = true
+codegen-units = 1

@@ -1,5 +1,6 @@
+#![feature(type_ascription)]
 pub mod serialize;
-use crate::serialize::new_serializer;
+
 use arrow2::array::Array;
 use arrow2::chunk::Chunk;
 use arrow2::datatypes::Metadata;
@@ -8,13 +9,18 @@ use rayon::prelude::*;
 use rustler::types::binary::Binary;
 use rustler::{Encoder, Env, Term};
 use std::collections::HashMap;
+
 use std::sync::Arc;
 
+use crate::serialize::new_serializer;
+
+#[derive(Debug)]
 pub enum ReturnType<'a> {
     Int32(Option<&'a i32>),
     Int64(Option<&'a i64>),
-    // Float64(Option<f64>),
-    Float64(Option<f64>),
+    Float64(Option<&'a f64>),
+    Str(Option<&'a str>),
+    Float642(Option<f64>),
     Int16(Option<&'a i16>),
     Int8(Option<&'a i8>),
     Utf8(Option<&'a str>),
@@ -37,23 +43,23 @@ rustler::init!("Elixir.SnowflakeArrow.Native", [convert_arrow_stream]);
 
 #[rustler::nif]
 #[inline]
-pub fn convert_arrow_stream<'a>(
+fn convert_arrow_stream<'a>(
     env: Env<'a>,
     arrow_stream_data: Binary,
     _cast_elixir_types: bool,
 ) -> Term<'a> {
-    let mut d = arrow_stream_data.as_ref();
+    let mut arrow_data = arrow_stream_data.as_ref();
 
     // We want the metadata later for checking types
-    let metadata = read::read_stream_metadata(&mut d).unwrap();
+    let metadata = read::read_stream_metadata(&mut arrow_data).unwrap();
 
-    let mut field_metadata: HashMap<usize, Metadata> = HashMap::new();
+    let mut field_metadata: HashMap<String, Metadata> = HashMap::new();
 
-    for (i, field) in metadata.schema.fields.iter().enumerate() {
-        field_metadata.insert(i, field.metadata.clone());
+    for (_i, field) in metadata.schema.fields.iter().enumerate() {
+        field_metadata.insert(field.name.to_string(), field.metadata.clone());
     }
 
-    let mut stream = read::StreamReader::new(&mut d, metadata.clone());
+    let mut stream = read::StreamReader::new(&mut arrow_data, metadata.clone());
     let mut chunks: Vec<Chunk<Arc<dyn Array>>> = vec![];
 
     loop {
@@ -66,25 +72,31 @@ pub fn convert_arrow_stream<'a>(
             None => break,
         }
     }
+
     chunks
-        .iter()
+        .par_iter()
         .flat_map(|chunk| {
             chunk
                 .iter()
                 .enumerate()
                 .map(|(field_index, array)| {
-                    let fm = field_metadata.get(&field_index).unwrap();
-                    let return_type = new_serializer(&fm, array);
                     let field_name = metadata.schema.fields[field_index].name.clone();
-
-                    (field_name, return_type)
+                    let fm = field_metadata.get(&field_name).unwrap();
+                    (field_name, new_serializer(fm, array))
                 })
                 .collect::<HashMap<String, Vec<ReturnType<'_>>>>()
         })
-        .fold(HashMap::new(), |mut acc, (key, rt)| {
+        .fold(HashMap::new, |mut acc, (key, rt)| {
             acc.entry(key).or_insert_with(|| vec![]).extend(rt);
             acc
         })
+        .reduce_with(|mut m1, m2| {
+            for (k, v) in m2 {
+                m1.entry(k).or_insert_with(Vec::new).extend(v);
+            }
+            m1
+        })
+        .unwrap()
         .encode(env)
 }
 
@@ -102,6 +114,8 @@ impl<'b> Encoder for ReturnType<'_> {
             ReturnType::String(a) => a.encode(env),
             ReturnType::Boolean(a) => a.encode(env),
             ReturnType::Missing(x) => x.encode(env),
+            ReturnType::Float642(x) => x.encode(env),
+            ReturnType::Str(x) => x.encode(env),
         }
     }
 }

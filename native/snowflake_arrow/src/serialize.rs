@@ -18,44 +18,31 @@ pub fn new_serializer<'a>(
             .downcast_ref::<PrimitiveArray<i64>>()
             .unwrap()
             .iter()
-            .map(|x| match &x {
-                Some(x) => ReturnType::Int64(Some(x)),
-                None => ReturnType::Int64(None),
-            })
+            .map(|x| ReturnType::Int64(x))
             .collect::<Vec<ReturnType>>(),
         DataType::Float64 => array
             .as_any()
             .downcast_ref::<PrimitiveArray<f64>>()
             .unwrap()
             .iter()
-            .map(|x| match x {
-                Some(x) => ReturnType::Float64(Some(*x)),
-                None => ReturnType::Float64(None),
-            })
+            .map(|x| ReturnType::Float64(x))
             .collect::<Vec<ReturnType>>(),
         DataType::Boolean => array
             .as_any()
             .downcast_ref::<BooleanArray>()
             .unwrap()
             .iter()
-            .map(|x| match &x {
-                Some(x) => ReturnType::Boolean(Some(*x)),
-                None => ReturnType::Boolean(None),
-            })
+            .map(|x| ReturnType::Boolean(x))
             .collect(),
         DataType::Utf8 => array
             .as_any()
             .downcast_ref::<Utf8Array<i32>>()
             .unwrap()
             .iter()
-            .map(|x| match &x {
-                Some(x) => ReturnType::Utf8(Some(x)),
-                None => ReturnType::Utf8(None),
-            })
+            .map(|x| ReturnType::Utf8(x))
             .collect(),
         DataType::Date32 => date32_to_dates(array),
-
-        // Snowflake is goofy and sends back floats in integers, I think it's because they
+        // Snowflake sends back floats in integers, I think it's because they
         // were super early adopters of Arrow so they had to use what they could.
         DataType::Int32 => {
             if field_metadata.get("scale").unwrap() == "0" {
@@ -64,10 +51,7 @@ pub fn new_serializer<'a>(
                     .downcast_ref::<Int32Array>()
                     .unwrap()
                     .iter()
-                    .map(|x| match &x {
-                        Some(x) => ReturnType::Int32(Some(x)),
-                        None => ReturnType::Int32(None),
-                    })
+                    .map(|x| ReturnType::Int32(x))
                     .collect::<Vec<ReturnType>>()
             } else {
                 let scale = field_metadata.get("scale").unwrap().parse::<i32>().unwrap();
@@ -93,7 +77,6 @@ pub fn new_serializer<'a>(
                 _ => unreachable!(),
             }
         }
-        // Should be unreachable, unless SF adds new types
         _ => unreachable!(),
     }
 }
@@ -106,7 +89,10 @@ pub fn float_to_vecs(array: &Arc<dyn Array>, scale: i32) -> Vec<ReturnType> {
         .unwrap()
         .iter()
         .map(|t| match t {
-            Some(v) => ReturnType::Float64(Some(*v as f64 / 10f64.powi(scale))),
+            Some(&v) => {
+                let float = v as f64 / 10f64.powi(scale);
+                ReturnType::Float642(Some(float))
+            }
             None => ReturnType::Float64(None),
         })
         .collect::<Vec<ReturnType>>()
@@ -147,11 +133,11 @@ pub fn convert_timestamps(column: &dyn Any) -> Vec<ReturnType> {
 pub fn date32_to_dates(array: &Arc<dyn Array>) -> Vec<ReturnType> {
     array
         .as_any()
-        .downcast_ref::<Int32Array>()
+        .downcast_ref::<PrimitiveArray<i32>>()
         .unwrap()
         .iter()
         .map(|t| match t {
-            Some(v) => ReturnType::String(Some(date32_to_date(*v).to_string())),
+            Some(t) => ReturnType::String(Some(date32_to_date(*t).to_string())),
             None => ReturnType::String(None),
         })
         .collect::<Vec<ReturnType>>()
