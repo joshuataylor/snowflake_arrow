@@ -1,26 +1,28 @@
 #![feature(type_ascription)]
 pub mod serialize;
 
+use crate::atoms::elixir_calendar_iso;
 use crate::serialize::new_serializer;
 use arrow2::array::Array;
 use arrow2::chunk::Chunk;
-use arrow2::datatypes::Metadata;
+use arrow2::datatypes::{DataType, Metadata};
 use arrow2::io::ipc::read;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
+use indexmap::IndexMap;
 use rayon::prelude::*;
 use rustler::types::binary::Binary;
 use rustler::NifStruct;
 use rustler::NifUntaggedEnum;
 use rustler::{Encoder, Env, Term};
 use std::sync::Arc;
-use indexmap::IndexMap;
 
 #[derive(NifStruct, Debug)]
-#[module = "ElixirDate"]
+#[module = "Date"]
 pub struct ElixirDate {
     pub year: i32,
     pub month: u32,
     pub day: u32,
+    pub calendar: rustler::Atom,
 }
 
 #[derive(NifStruct, Debug)]
@@ -31,7 +33,6 @@ pub struct ElixirDateTime {
     pub day: u32,
     pub minute: u32,
     pub second: u32,
-    // pub microsecond: microsecond,
 }
 
 impl From<NaiveDate> for ElixirDate {
@@ -40,6 +41,7 @@ impl From<NaiveDate> for ElixirDate {
             year: d.year(),
             month: d.month(),
             day: d.day(),
+            calendar: elixir_calendar_iso(),
         }
     }
 }
@@ -74,12 +76,30 @@ pub enum ReturnType {
     Missing(Option<String>),
 }
 
+impl From<DataType> for ReturnType {
+    fn from(dt: DataType) -> Self {
+        match dt {
+            // DataType::Null => {}
+            DataType::Boolean => ReturnType::Boolean(None),
+            DataType::Int8 => ReturnType::Int8(None),
+            DataType::Int16 => ReturnType::Int16(None),
+            DataType::Int32 => ReturnType::Int32(None),
+            DataType::Int64 => ReturnType::Int64(None),
+            DataType::Float64 => ReturnType::Float64(None),
+            DataType::Date32 => ReturnType::Date(None),
+            DataType::Utf8 => ReturnType::String(None),
+            _ => unreachable!(),
+        }
+    }
+}
+
 mod atoms {
     rustler::atoms! {
       ok,
       error,
       __struct__,
-      nil
+      nil,
+      elixir_calendar_iso = "Elixir.Calendar.ISO"
     }
 }
 
@@ -98,27 +118,24 @@ fn convert_arrow_stream<'a>(
     // We want the metadata later for checking types
     let metadata = read::read_stream_metadata(&mut arrow_data).unwrap();
 
-    let mut field_metadata: IndexMap<String, Metadata> = IndexMap::new();
+    let mut field_metadata: IndexMap<usize, Metadata> = IndexMap::new();
 
-    for (_i, field) in metadata.schema.fields.iter().enumerate() {
-        field_metadata.insert(field.name.to_string(), field.metadata.clone());
+    for (i, field) in metadata.schema.fields.iter().enumerate() {
+        field_metadata.insert(i, field.metadata.clone());
     }
 
-    let mut stream = read::StreamReader::new(&mut arrow_data, metadata.clone());
+    let stream = read::StreamReader::new(&mut arrow_data, metadata.clone());
     let mut chunks: Vec<Chunk<Arc<dyn Array>>> = vec![];
     let mut total_rows = 0;
 
-    loop {
-        match stream.next() {
-            Some(x) => match x {
-                Ok(read::StreamState::Some(chunk)) => {
-                    total_rows += chunk.len();
-                    chunks.push(chunk)
-                }
-                Ok(read::StreamState::Waiting) => break,
-                Err(_l) => break,
-            },
-            None => break,
+    for stream_state in stream {
+        match stream_state {
+            Ok(read::StreamState::Some(chunk)) => {
+                total_rows += chunk.len();
+                chunks.push(chunk)
+            }
+            Ok(read::StreamState::Waiting) => break,
+            Err(_l) => break,
         }
     }
 
@@ -130,13 +147,13 @@ fn convert_arrow_stream<'a>(
                 .enumerate()
                 .map(|(field_index, array)| {
                     let field_name = metadata.schema.fields[field_index].name.clone();
-                    let fm = field_metadata.get(&field_name).unwrap();
+                    let fm = field_metadata.get(&field_index).unwrap();
                     (field_name, new_serializer(fm, array, cast_elixir_types))
                 })
                 .collect::<IndexMap<String, Vec<ReturnType>>>()
         })
         .fold(IndexMap::new, |mut acc, (key, rt)| {
-            acc.entry(key).or_insert_with(|| vec![]).extend(rt);
+            acc.entry(key).or_insert_with(std::vec::Vec::new).extend(rt);
             acc
         })
         .reduce_with(|mut m1, m2| {
@@ -144,123 +161,14 @@ fn convert_arrow_stream<'a>(
                 m1.entry(k).or_insert_with(Vec::new).extend(v);
             }
             m1
-        }).unwrap();
+        })
+        .unwrap();
 
     // total values in return_type_hashmap
     let total_columns = return_type_hashmap.len();
 
-    // As we need to return rows back to Elixir, we need to transpose the data.
-    // This is probably a stupid way to do this, but it works, and much faster than doing it
-    // in elixir
-    // Elixir code would look like this (it takes multiple seconds to run for me):
-    //     total_columns = length(Map.keys(columns))
-    //     total = length(columns[hd(Map.keys(columns))])
-    //     list = Map.to_list(columns)
-    //
-    //     Enum.map(0..(total - 1), fn row_index ->
-    //       Enum.map(0..(total_columns - 1), fn column_index ->
-    //         {key, values} = Enum.at(list, column_index)
-    //         Enum.at(values, row_index)
-    //       end)
-    //     end)
-    if transpose_rows {
-        return (0..total_rows)
-            .into_iter()
-            .map(|row_index| {
-                (0..total_columns)
-                    .into_iter()
-                    .map(|column_index| {
-                        // println!("{}", column_index);
-                        let column_name = return_type_hashmap.values().nth(column_index).unwrap();
-                        column_name.get(row_index).unwrap()
-                    })
-                    .collect::<Vec<&ReturnType>>()
-            })
-            .collect::<Vec<Vec<&ReturnType>>>()
-            .encode(env);
-    }
-
-    // We need to implement ArrowIndexMap here, as we need to encode it later but will get an error otherwise.
-    ArrowIndexMap(return_type_hashmap).encode(env)
-}
-
-#[rustler::nif]
-#[inline]
-fn convert_arrow_stream_rows<'a>(
-    env: Env<'a>,
-    arrow_stream_data: Binary,
-    cast_elixir_types: bool
-) -> Term<'a> {
-    let mut arrow_data = arrow_stream_data.as_ref();
-
-    // We want the metadata later for checking types
-    let metadata = read::read_stream_metadata(&mut arrow_data).unwrap();
-
-    let mut field_metadata: IndexMap<String, Metadata> = IndexMap::new();
-
-    for (_i, field) in metadata.schema.fields.iter().enumerate() {
-        field_metadata.insert(field.name.to_string(), field.metadata.clone());
-    }
-
-    let mut stream = read::StreamReader::new(&mut arrow_data, metadata.clone());
-    let mut chunks: Vec<Chunk<Arc<dyn Array>>> = vec![];
-    let mut total_rows = 0;
-
-    loop {
-        match stream.next() {
-            Some(x) => match x {
-                Ok(read::StreamState::Some(chunk)) => {
-                    total_rows += chunk.len();
-                    chunks.push(chunk)
-                }
-                Ok(read::StreamState::Waiting) => break,
-                Err(_l) => break,
-            },
-            None => break,
-        }
-    }
-
-    let return_type_hashmap: IndexMap<String, Vec<ReturnType>> = chunks
-        .par_iter()
-        .flat_map(|chunk| {
-            chunk
-                .iter()
-                .enumerate()
-                .map(|(field_index, array)| {
-                    let field_name = metadata.schema.fields[field_index].name.clone();
-                    let fm = field_metadata.get(&field_name).unwrap();
-                    (field_name, new_serializer(fm, array, cast_elixir_types))
-                })
-                .collect::<IndexMap<String, Vec<ReturnType>>>()
-        })
-        .fold(IndexMap::new, |mut acc, (key, rt)| {
-            acc.entry(key).or_insert_with(|| vec![]).extend(rt);
-            acc
-        })
-        .reduce_with(|mut m1, m2| {
-            for (k, v) in m2 {
-                m1.entry(k).or_insert_with(Vec::new).extend(v);
-            }
-            m1
-        }).unwrap();
-
-    // total values in return_type_hashmap
-    let total_columns = return_type_hashmap.len();
-
-    // As we need to return rows back to Elixir, we need to transpose the data.
-    // This is probably a stupid way to do this, but it works, and much faster than doing it
-    // in elixir
-    // Elixir code would look like this (it takes multiple seconds to run for me):
-    //     total_columns = length(Map.keys(columns))
-    //     total = length(columns[hd(Map.keys(columns))])
-    //     list = Map.to_list(columns)
-    //
-    //     Enum.map(0..(total - 1), fn row_index ->
-    //       Enum.map(0..(total_columns - 1), fn column_index ->
-    //         {key, values} = Enum.at(list, column_index)
-    //         Enum.at(values, row_index)
-    //       end)
-    //     end)
+    // As we need to return rows back to Elixir, we need to transpose the data for columns tro rows.
+    // This is probably a stupid way to do this, but it works.
     if transpose_rows {
         return (0..total_rows)
             .into_iter()
@@ -284,7 +192,8 @@ fn convert_arrow_stream_rows<'a>(
 
 impl Encoder for ArrowIndexMap {
     fn encode<'a>(&self, env: Env<'a>) -> Term<'a> {
-        let (keys, values): (Vec<_>, Vec<_>) = self.0
+        let (keys, values): (Vec<_>, Vec<_>) = self
+            .0
             .iter()
             .map(|(k, v)| (k.encode(env), v.encode(env)))
             .unzip();

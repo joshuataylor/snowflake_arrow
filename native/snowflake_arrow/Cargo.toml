@@ -7,7 +7,7 @@ authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
 [lib]
 name = "snowflake_arrow"
 path = "src/lib.rs"
-crate-type = ["dylib"]
+crate-type = ["rlib", "dylib"]
 
 [dependencies]
 rustler = "0.25.0"

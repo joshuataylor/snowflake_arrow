@@ -40,18 +40,7 @@ defmodule SnowflakeArrow.DateConversionTest do
 
     values = Native.convert_arrow_stream(data, true, false)
 
-    assert values["SF_DATE"] == [
-             nil,
-             nil,
-             nil,
-             "2024-05-26",
-             nil,
-             nil,
-             nil,
-             nil,
-             nil,
-             "2022-07-30"
-           ]
+    assert values["SF_DATE"] == [nil, nil, nil, ~D[2024-05-26], nil, nil, nil, nil, nil, ~D[2022-07-30]]
   end
 
 end

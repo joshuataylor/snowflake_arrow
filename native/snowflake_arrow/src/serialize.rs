@@ -61,7 +61,7 @@ pub fn new_serializer<'a>(
             .downcast_ref::<BooleanArray>()
             .unwrap()
             .iter()
-            .map(|x| ReturnType::Boolean(x))
+            .map(ReturnType::Boolean)
             .collect(),
         DataType::Utf8 => array
             .as_any()
