@@ -14,6 +14,7 @@ rustler = "0.25.0"
 arrow2 = { version  = "0.12.0", features = ["io_ipc", "simd"] }
 chrono = "0.4"
 rayon = "1.5.3"
+indexmap = {version = "1.8.2", features = ["rayon"]}
 
 [profile.release]
 lto = true
