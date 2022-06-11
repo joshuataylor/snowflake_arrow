@@ -12,34 +12,10 @@ defmodule SnowflakeArrow.DecimalConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, true, false)
+    values = Native.convert_arrow_stream_to_rows(data, true)
+    require IEx
+    IEx.pry
 
-    assert values["SF_DECIMAL_38_2"] == [
-             21885.79,
-             nil,
-             nil,
-             7395.6,
-             26737.49,
-             7479.49,
-             21256.18,
-             nil,
-             17681.54,
-             nil
-           ]
-
-    values = Native.convert_arrow_stream(data, true, true)
-
-    assert values == [
-             [21885.79],
-             [nil],
-             [nil],
-             [7395.6],
-             [26737.49],
-             [7479.49],
-             [21256.18],
-             [nil],
-             [17681.54],
-             [nil]
-           ]
+    assert values== [[2188579], [nil], [nil], [739560], [2673749], [747949], [2125618], [nil], [1768154], [nil]]
   end
 end

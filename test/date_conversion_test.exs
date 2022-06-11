@@ -12,20 +12,9 @@ defmodule SnowflakeArrow.DateConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, false, false)
+    values = Native.convert_arrow_stream_to_rows(data, false)
 
-    assert values["SF_DATE"] == [
-             nil,
-             nil,
-             nil,
-             "2024-05-26",
-             nil,
-             nil,
-             nil,
-             nil,
-             nil,
-             "2022-07-30"
-           ]
+    assert values == [[nil], [nil], [nil], ["2024-05-26"], [nil], [nil], [nil], [nil], [nil], ["2022-07-30"]]
   end
 
   test "Can convert nulls and dates to correct with elixir types" do
@@ -38,9 +27,8 @@ defmodule SnowflakeArrow.DateConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, true, false)
+    values = Native.convert_arrow_stream_to_rows(data, true)
 
-    assert values["SF_DATE"] == [nil, nil, nil, ~D[2024-05-26], nil, nil, nil, nil, nil, ~D[2022-07-30]]
+    assert values == [[nil], [nil], [nil], [~D[2024-05-26]], [nil], [nil], [nil], [nil], [nil], [~D[2022-07-30]]]
   end
-
 end

@@ -12,7 +12,7 @@ defmodule SnowflakeArrow.TextConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, false, false)
+    values = Native.convert_arrow_stream_to_rows(data, false, false)
 
     assert values["SF_VARCHAR"] ==
              [

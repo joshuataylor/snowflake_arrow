@@ -11,10 +11,7 @@ defmodule SnowflakeArrow.ChunkConversionTest do
         ])
       )
 
-    values = Native.convert_arrow_stream(data, false, false)
-    assert values["SF_VARCHAR"] |> length == 1868
-
-    values = Native.convert_arrow_stream(data, false, true)
+    values = Native.convert_arrow_stream_to_rows(data, true)
     assert values |> length == 1868
   end
 
@@ -28,7 +25,7 @@ defmodule SnowflakeArrow.ChunkConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream(data, true, true)
+    values = Native.convert_arrow_stream_to_rows(data, true)
 
     assert length(values) == 100
 
@@ -36,7 +33,7 @@ defmodule SnowflakeArrow.ChunkConversionTest do
 
     row = values |> hd
 
-    IO.inspect row
+    IO.inspect(row)
 
     [
       row_number,
@@ -58,6 +55,5 @@ defmodule SnowflakeArrow.ChunkConversionTest do
     ] = row
 
     assert row_number == 1
-
   end
 end
