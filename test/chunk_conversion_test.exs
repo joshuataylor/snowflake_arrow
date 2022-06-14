@@ -1,6 +1,5 @@
 defmodule SnowflakeArrow.ChunkConversionTest do
   use ExUnit.Case, async: true
-  alias SnowflakeArrow.Native
 
   test "Can convert nulls and dates to correct without elixir types" do
     data =
@@ -11,11 +10,11 @@ defmodule SnowflakeArrow.ChunkConversionTest do
         ])
       )
 
-    values = Native.convert_arrow_stream_to_rows(data, true)
+    values = SnowflakeArrow.convert_arrow_to_rows(data, cast: false)
     assert values |> length == 1868
   end
 
-  test "Can convert arrow to correct order of rows/columns without elixir types" do
+  test "Can convert arrow to correct order of rows/columns with elixir types" do
     data =
       File.read!(
         Path.join([
@@ -25,7 +24,7 @@ defmodule SnowflakeArrow.ChunkConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream_to_rows(data, true)
+    values = SnowflakeArrow.convert_arrow_to_rows(data, cast: true)
 
     assert length(values) == 100
 
@@ -33,27 +32,22 @@ defmodule SnowflakeArrow.ChunkConversionTest do
 
     row = values |> hd
 
-    IO.inspect(row)
-
-    [
-      row_number,
-      sf_boolean,
-      sf_varchar,
-      sf_integer,
-      sf_float,
-      sf_float_tinto_iterwo_precision,
-      sf_decimal_38_2,
-      sf_timestamp_ntz,
-      sf_timestamp_ltz,
-      sf_timestamp,
-      sf_date,
-      sf_variant_json,
-      sf_array,
-      sf_object,
-      sf_hex_binary,
-      sf_base64_binary
-    ] = row
-
-    assert row_number == 1
+    assert row ==
+             [
+               1,
+               nil,
+               nil,
+               1_211_510_379,
+               nil,
+               6167.02,
+               nil,
+               nil,
+               nil,
+               nil,
+               ~D[2023-11-11],
+               nil,
+               nil,
+               nil
+             ]
   end
 end

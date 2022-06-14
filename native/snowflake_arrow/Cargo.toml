@@ -11,10 +11,10 @@ crate-type = ["rlib", "dylib"]
 
 [dependencies]
 rustler = "0.25.0"
-arrow2 = { version = "0.12", features = ["io_ipc", "simd"] }
-rayon = "1.5"
+arrow2 = { git = "https://github.com/jorgecarleitao/arrow2", features = ["io_ipc", "simd"] }
+bytes = "1"
 chrono = "0.4"
-streaming-iterator = { version = "0.1" }
+indexmap = "1.8.2"
 
 [profile.release]
 lto = true

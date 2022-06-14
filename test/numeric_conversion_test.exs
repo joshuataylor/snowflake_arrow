@@ -1,6 +1,5 @@
 defmodule SnowflakeArrow.NumericConversionTest do
   use ExUnit.Case, async: true
-  alias SnowflakeArrow.Native
 
   test "Can convert nulls and integer to correct" do
     data =
@@ -12,8 +11,19 @@ defmodule SnowflakeArrow.NumericConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream_to_rows(data, true)
+    values = SnowflakeArrow.convert_arrow_to_rows(data, cast: true)
 
-    assert values == [[13171725832], [nil], [nil], [nil], [16395724444], [nil], [15107057545], [nil], [17910485500], [nil]]
+    assert values == [
+             [13_171_725_832],
+             [nil],
+             [nil],
+             [nil],
+             [16_395_724_444],
+             [nil],
+             [15_107_057_545],
+             [nil],
+             [17_910_485_500],
+             [nil]
+           ]
   end
 end

@@ -1,6 +1,5 @@
 defmodule SnowflakeArrow.TextConversionTest do
   use ExUnit.Case, async: true
-  alias SnowflakeArrow.Native
 
   test "Can convert text to string without elixir types" do
     data =
@@ -12,20 +11,20 @@ defmodule SnowflakeArrow.TextConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream_to_rows(data, false, false)
+    values = SnowflakeArrow.convert_arrow_to_rows(data, cast: false)
 
-    assert values["SF_VARCHAR"] ==
-             [
-               nil,
-               nil,
-               "fF7Lk7YKfXtYFsY2fVXN",
-               nil,
-               "dvhJoe9A0qtgRJwHFMHN",
-               nil,
-               nil,
-               "dBmT57wW3U0pLaJp9PGV",
-               nil,
-               "XRFjUy5wdbzE7k1z9SSa"
-             ]
+    assert values == [
+             [nil],
+             [nil],
+             [nil],
+             ["fF7Lk7YKfXtYFsY2fVXN"],
+             [nil],
+             ["dvhJoe9A0qtgRJwHFMHN"],
+             [nil],
+             [nil],
+             ["dBmT57wW3U0pLaJp9PGV"],
+             [nil],
+             ["XRFjUy5wdbzE7k1z9SSa"]
+           ]
   end
 end

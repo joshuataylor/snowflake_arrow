@@ -1,6 +1,5 @@
 defmodule SnowflakeArrow.DecimalConversionTest do
   use ExUnit.Case, async: true
-  alias SnowflakeArrow.Native
 
   test "Can convert decimals to correct" do
     data =
@@ -12,10 +11,19 @@ defmodule SnowflakeArrow.DecimalConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream_to_rows(data, true)
-    require IEx
-    IEx.pry
+    values = SnowflakeArrow.convert_arrow_to_rows(data, cast: true)
 
-    assert values== [[2188579], [nil], [nil], [739560], [2673749], [747949], [2125618], [nil], [1768154], [nil]]
+    assert values == [
+             [21885.79],
+             [nil],
+             [nil],
+             [7395.6],
+             [26737.49],
+             [7479.49],
+             [21256.18],
+             [nil],
+             [17681.54],
+             [nil]
+           ]
   end
 end

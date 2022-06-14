@@ -1,6 +1,5 @@
 defmodule SnowflakeArrow.BooleanConversionTest do
   use ExUnit.Case, async: true
-  alias SnowflakeArrow.Native
 
   test "Can convert booleans to correct" do
     data =
@@ -12,20 +11,9 @@ defmodule SnowflakeArrow.BooleanConversionTest do
       )
       |> Base.decode64!()
 
-    values = Native.convert_arrow_stream_to_rows(data, true)
+    values = SnowflakeArrow.convert_arrow_to_rows(data, cast: true)
 
     # Transpose
-    assert values == [
-             [123],
-             [nil],
-             [nil],
-             [nil],
-             [nil],
-             [false],
-             [nil],
-             [true],
-             [nil],
-             [false]
-           ]
+    assert values == [[nil], [nil], [nil], [nil], [nil], [false], [nil], [true], [nil], [false]]
   end
 end

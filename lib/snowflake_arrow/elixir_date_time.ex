@@ -11,9 +11,4 @@ defmodule ElixirDateTime do
     :utc_offset,
     :std_offset
   ]
-
-  def foo() do
-    require IEx
-    IEx.pry
-  end
 end
