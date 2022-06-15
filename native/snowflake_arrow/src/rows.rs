@@ -34,13 +34,16 @@ pub struct ElixirDate {
 }
 
 #[derive(NifStruct, Debug)]
-#[module = "ElixirDateTime"]
+#[module = "NaiveDateTime"]
 pub struct ElixirDateTime {
     pub year: i32,
     pub month: u32,
     pub day: u32,
     pub minute: u32,
     pub second: u32,
+    pub microsecond: (u32, usize),
+    pub calendar: rustler::Atom,
+    pub hour: u32,
 }
 
 impl From<NaiveDate> for ElixirDate {
@@ -60,8 +63,11 @@ impl From<NaiveDateTime> for ElixirDateTime {
             year: d.year(),
             month: d.month(),
             day: d.day(),
+            hour: d.hour(),
             minute: d.minute(),
             second: d.second(),
+            microsecond: (d.timestamp_subsec_micros(), 6),
+            calendar: elixir_calendar_iso(),
         }
     }
 }
