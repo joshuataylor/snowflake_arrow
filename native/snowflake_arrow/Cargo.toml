@@ -1,0 +1,28 @@
+[package]
+name = "snowflake_arrow"
+version = "0.1.0"
+edition = "2021"
+authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
+
+[lib]
+name = "snowflake_arrow"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.25.0"
+#rustler = { path = "/home/josh/dev/rustler/rustler"}
+arrow2 = { git = "https://github.com/jorgecarleitao/arrow2", features = ["io_ipc", "simd"] }
+chrono = "0.4"
+# MiMalloc won´t compile on Windows with the GCC compiler.
+# On Linux with Musl it won´t load correctly.
+[target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
+mimalloc = { version = "*", default-features = false }
+
+[profile.release]
+lto = true
+strip = "debuginfo"
+codegen-units = 1
+
+[profile.dev]
+opt-level = 1
