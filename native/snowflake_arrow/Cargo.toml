@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 [dependencies]
 rustler = "0.25.0"
 rustler_sys = "2.2.0"
-polars_snowflake = { path = "/home/josh/dev/polars_snowflake" }
+polars_snowflake = { git = "https://github.com/joshuataylor/polars_snowflake" }
 polars = { git = "https://github.com/pola-rs/polars", features = ["simd", "performant", "dtype-full", "ipc"] , rev = "a731ec47acc9e8a70b3c908006008abaf26e2e29"}
 chrono = "0.4"
 
