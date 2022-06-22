@@ -1,24 +1,8 @@
 defmodule SnowflakeArrow.BooleanConversionTest do
   use ExUnit.Case, async: true
 
-  test "Can convert booleans to correct" do
-    row_type = [
-      %{
-        "byteLength" => nil,
-        "collation" => nil,
-        "database" => "FOO",
-        "length" => nil,
-        "name" => "SF_BOOLEAN",
-        "nullable" => true,
-        "precision" => nil,
-        "scale" => nil,
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "type" => "boolean"
-      }
-    ]
-
-    data =
+  test "Can convert nil and booleans to correct format" do
+    values =
       File.read!(
         Path.join([
           :code.priv_dir(:snowflake_arrow),
@@ -26,11 +10,8 @@ defmodule SnowflakeArrow.BooleanConversionTest do
         ])
       )
       |> Base.decode64!()
+      |> SnowflakeArrow.read_arrow_stream_to_columns!()
 
-    values = SnowflakeArrow.convert_arrow_to_rows(data, row_type, cast: true)
-    assert length(values) == 10
-
-    # Transpose
-    assert values == [[nil], [nil], [nil], [nil], [nil], [false], [nil], [true], [nil], [false]]
+    assert values == [[nil, nil, nil, nil, nil, false, nil, true, nil, false]]
   end
 end

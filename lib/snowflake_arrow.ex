@@ -1,66 +1,43 @@
 defmodule SnowflakeArrow do
   alias SnowflakeArrow.Native
 
-  @spec convert_arrow_to_rows(binary, Map.t(), cast: boolean()) :: list
-  def convert_arrow_to_rows(data, snowflake_column_data, cast: true) when is_binary(data) do
-    data
-    |> Native.convert_arrow_stream_to_columns(true)
-    |> Enum.map(&process_columns(&1, hd(&1)))
-    |> Enum.zip_with(& &1)
+  def convert_arrow_to_df(data) when is_binary(data) do
+    Native.convert_snowflake_arrow_stream_to_df(data)
   end
 
-  def convert_arrow_to_rows(data, _, cast: false) when is_binary(data) do
-    convert_arrow_to_rows(data, cast: false)
+  # Once explorer has mutable dataframes in, we can remove these.
+  def append_snowflake_arrow_to_df(ref, data) when is_binary(data) do
+    Native.append_snowflake_arrow_stream_to_df(ref, data)
   end
 
-  @spec convert_arrow_to_rows(binary, Map.t(), cast: boolean()) :: list
-  def convert_arrow_to_rows(data, cast: false) when is_binary(data) do
-    data
-    |> Native.convert_arrow_stream_to_columns(false)
-#    |> Stream.map(&process_columns(&1, hd(&1)))
-    |> Enum.zip_with(& &1)
-#    |> Enum.to_list()
+  def to_owned(resource) do
+    Native.to_owned(resource)
   end
 
-  def process_columns(rows, type) when is_tuple(type) and tuple_size(type) == 3 do
-    rows
-    |> Enum.map(&remap_dates/1)
+  def get_column(resource, column_name) do
+    Native.get_column(resource, column_name)
   end
 
-  def process_columns(rows, type) when is_tuple(type) and tuple_size(type) == 7 do
-    rows
-    |> Enum.map(&remap_datetimes/1)
+  def get_column_names(resource) do
+    Native.get_column_names(resource)
   end
 
-  def process_columns(rows, _type), do: rows
-
-  def remap_datetimes(nil), do: nil
-
-  def remap_datetimes({year, month, day, hour, minute, second, microsecond}) do
-    %DateTime{
-      calendar: Calendar.ISO,
-      year: year,
-      month: month,
-      day: day,
-      hour: hour,
-      minute: minute,
-      second: second,
-      microsecond: {microsecond, 6},
-      std_offset: 0,
-      utc_offset: 0,
-      zone_abbr: "UTC",
-      time_zone: "Etc/UTC"
-    }
+  def read_arrow_stream_to_columns!(data) when is_binary(data) do
+    with {:ok, ref} <- convert_arrow_to_df(data),
+         {:ok, owned_ref} <- to_owned(ref),
+         columns <- get_columns(owned_ref) do
+      columns
+    end
   end
 
-  def remap_dates(nil), do: nil
+  def get_columns(resource) do
+    {:ok, names} = get_column_names(resource)
 
-  def remap_dates({year, month, day}) do
-    %Date{
-      calendar: Calendar.ISO,
-      year: year,
-      month: month,
-      day: day
-    }
+    names
+    |> Stream.map(fn name ->
+      {:ok, data} = get_column(resource, name)
+      data
+    end)
+    |> Enum.to_list()
   end
 end

@@ -1,10 +1,10 @@
 defmodule SnowflakeArrow.Native do
-  # , mode: :release
-  use Rustler, otp_app: :snowflake_arrow, crate: :snowflake_arrow
-  #  use JemallocInfo.RustlerMixin
+  use Rustler, otp_app: :snowflake_arrow, crate: :snowflake_arrow, mode: :release
 
-  def convert_arrow_stream_to_columns("", _cast), do: []
-  def convert_arrow_stream_to_columns(_binary, _cast), do: error()
-  #  def arrow_ffi(_binary), do: error()
+  def convert_snowflake_arrow_stream_to_df(_array), do: error()
+  def append_snowflake_arrow_stream_to_df(_resource, _df2), do: error()
+  def to_owned(_resource), do: error()
+  def get_column(_resource, _column_name), do: error()
+  def get_column_names(_resource), do: error()
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

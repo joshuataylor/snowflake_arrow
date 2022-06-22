@@ -4,243 +4,33 @@ defmodule SnowflakeArrow.ChunkConversionTest do
   test "Can convert arrow to correct order of rows/columns with elixir types" do
     arrow_data_large = File.read!("benchmark/large_arrow")
 
-    row_type = [
-      %{
-        "name" => "ROW_NUMBER",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => 0,
-        "precision" => 18,
-        "type" => "fixed",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_BOOLEAN",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "boolean",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_VARCHAR",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "text",
-        "byteLength" => 16_777_216,
-        "length" => 16_777_216,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_INTEGER",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => 0,
-        "precision" => 38,
-        "type" => "fixed",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_FLOAT",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "real",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_FLOAT_TWO_PRECISION",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "real",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_DECIMAL_38_2",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => 2,
-        "precision" => 38,
-        "type" => "fixed",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_TIMESTAMP_NTZ",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => 9,
-        "precision" => 0,
-        "type" => "timestamp_ntz",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_TIMESTAMP_LTZ",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => 9,
-        "precision" => 0,
-        "type" => "timestamp_ltz",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_TIMESTAMP",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => 9,
-        "precision" => 0,
-        "type" => "timestamp_ntz",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_DATE",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "date",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_VARIANT_JSON",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "variant",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_ARRAY",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "array",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_OBJECT",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "object",
-        "byteLength" => nil,
-        "length" => nil,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_HEX_BINARY",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "binary",
-        "byteLength" => 8_388_608,
-        "length" => 8_388_608,
-        "nullable" => true,
-        "collation" => nil
-      },
-      %{
-        "name" => "SF_BASE64_BINARY",
-        "database" => "FOO",
-        "schema" => "BAR",
-        "table" => "TEST_DATA",
-        "scale" => nil,
-        "precision" => nil,
-        "type" => "binary",
-        "byteLength" => 8_388_608,
-        "length" => 8_388_608,
-        "nullable" => true,
-        "collation" => nil
-      }
-    ]
+    values = SnowflakeArrow.read_arrow_stream_to_columns!(arrow_data_large)
 
-    values = SnowflakeArrow.convert_arrow_to_rows(arrow_data_large, row_type, cast: true)
+    assert length(values) == 14
 
-    #    IO.inspect(values)
+    rows =
+      values
+      |> Enum.zip_with(& &1)
 
-    assert length(values) == 100
+    assert length(rows) == 139_701
 
     # spot check some records
 
-    row = values |> hd
-
-    assert row ==
-             [
-               1,
-               nil,
-               nil,
-               1_211_510_379,
-               nil,
-               6167.02,
-               nil,
-               nil,
-               nil,
-               nil,
-               ~D[2023-11-11],
-               nil,
-               nil,
-               nil
-             ]
+    assert rows |> hd == [
+             198_649,
+             nil,
+             nil,
+             nil,
+             nil,
+             nil,
+             nil,
+             ~N[2024-04-04 23:20:12.064000],
+             nil,
+             ~N[2024-09-21 11:08:20.064000],
+             ~D[2024-11-11],
+             "{\n  \"key_489U1idsMBSdRJmIeMfj\": true\n}",
+             "[\n  12,\n  \"twelve\",\n  undefined\n]",
+             nil
+           ]
   end
 end
