@@ -1,5 +1,5 @@
 defmodule SnowflakeArrow.Native do
-  use Rustler, otp_app: :snowflake_arrow, crate: :snowflake_arrow, mode: :release
+  use Rustler, otp_app: :snowflake_arrow, crate: :snowflake_arrow
 
   def convert_snowflake_arrow_stream_to_df(_array), do: error()
   def append_snowflake_arrow_stream_to_df(_resource, _df2), do: error()

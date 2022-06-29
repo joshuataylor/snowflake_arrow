@@ -14,16 +14,16 @@ use polars::export::arrow::temporal_conversions::{date32_to_date, timestamp_ms_t
 use rustler::wrapper::list::make_list;
 use rustler::wrapper::NIF_TERM;
 use rustler::{Atom, Binary, Encoder, Env, NewBinary, ResourceArc, Term};
-use snowflake_polars::snowflake_arrow_ipc_streaming_binary_to_dataframe;
 use std::sync::Mutex;
 // use crate::rustler_helper::SnowflakeArrowBinary;
+use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn convert_snowflake_arrow_stream_to_df(
     arrow_stream_data: Binary,
 ) -> (Atom, MutableSnowflakeArrowDataframeArc) {
     let resource = ResourceArc::new(MutableSnowflakeArrowDataframeResource(Mutex::new(
-        snowflake_arrow_ipc_streaming_binary_to_dataframe(&mut arrow_stream_data.as_ref()).unwrap(),
+        snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data),
     )));
 
     (atoms::ok(), resource)
@@ -39,8 +39,7 @@ pub fn append_snowflake_arrow_stream_to_df(
         Ok(guard) => guard,
     };
 
-    let new_df =
-        snowflake_arrow_ipc_streaming_binary_to_dataframe(&mut arrow_stream_data.as_ref()).unwrap();
+    let new_df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data);
 
     match original_df.vstack_mut(&new_df) {
         Ok(_x) => ok(),

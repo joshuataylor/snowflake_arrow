@@ -9,6 +9,7 @@ use polars::prelude::DataFrame;
 use rustler::{Env, ResourceArc, Term};
 use std::sync::Mutex;
 
+pub mod polars_convert;
 mod rustler_helper;
 mod snowflake_dataframe;
 

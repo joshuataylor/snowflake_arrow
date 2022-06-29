@@ -47,7 +47,7 @@ dependencies = [
 [[package]]
 name = "arrow2"
 version = "0.12.0"
-source = "git+https://github.com/jorgecarleitao/arrow2?rev=d1ab4efa5c895513681bacd5e20660be882433ac#d1ab4efa5c895513681bacd5e20660be882433ac"
+source = "git+https://github.com/jorgecarleitao/arrow2?rev=f57dbd5dbc61b940a71decd5f81d0fd4c93b158d#f57dbd5dbc61b940a71decd5f81d0fd4c93b158d"
 dependencies = [
  "arrow-format",
  "bytemuck",
@@ -643,7 +643,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "arrow2",
  "hashbrown",
@@ -666,7 +666,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "ahash",
  "anyhow",
@@ -690,7 +690,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "ahash",
  "anyhow",
@@ -715,7 +715,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "ahash",
  "glob",
@@ -732,7 +732,7 @@ dependencies = [
 [[package]]
 name = "polars-ops"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "polars-arrow",
  "polars-core",
@@ -741,7 +741,7 @@ dependencies = [
 [[package]]
 name = "polars-time"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "chrono",
  "lexical",
@@ -753,18 +753,10 @@ dependencies = [
 [[package]]
 name = "polars-utils"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?rev=a731ec47acc9e8a70b3c908006008abaf26e2e29#a731ec47acc9e8a70b3c908006008abaf26e2e29"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
 dependencies = [
  "parking_lot",
  "rayon",
-]
-
-[[package]]
-name = "polars_snowflake"
-version = "0.1.0"
-dependencies = [
- "indexmap",
- "polars",
 ]
 
 [[package]]
@@ -1016,7 +1008,6 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "polars",
- "polars_snowflake",
  "rustler",
  "rustler_sys",
  "tikv-jemallocator",
