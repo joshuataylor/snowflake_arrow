@@ -47,7 +47,7 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> Dat
                                             AnyValue::Int32(x) => x,
                                             _ => unreachable!(),
                                         };
-                                        Some(NaiveDateTime::from_timestamp(epoch, fraction as u32z))
+                                        Some(NaiveDateTime::from_timestamp(epoch, fraction as u32))
                                     }
                                     _ => None,
                                 },
