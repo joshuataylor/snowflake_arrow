@@ -5,7 +5,7 @@ use polars::export::arrow::datatypes::Metadata;
 use polars::datatypes::{AnyValue, DataType as PolarsDataType, DatetimeChunked};
 use polars::export::chrono::NaiveDateTime;
 use polars::export::rayon::prelude::*;
-use polars::prelude::{DataFrame, IpcStreamReader, SerReader, Series, TimeUnit};
+use polars::prelude::{DataFrame, IpcStreamReader, NamedFrom, SerReader, Series, TimeUnit};
 use polars::series::IntoSeries;
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -29,6 +29,27 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> Dat
         .into_par_iter()
         .map(|series| {
             match series.dtype() {
+                PolarsDataType::Int32 => {
+                    let fm = column_metadata.get(series.name()).unwrap();
+
+                    if fm.get("scale").unwrap() == "0" {
+                        series
+                    } else {
+                        // build f64 from int32
+                        let scale = fm.get("scale").unwrap().parse::<i32>().unwrap();
+                        let ca = series.i32().unwrap();
+
+                        // Then convert to vec
+                        let to_vec: Vec<Option<i32>> = Vec::from(ca);
+
+                        let x = to_vec
+                            .iter()
+                            .map(|v| v.map(|x| x as f64 / 10f64.powi(scale) as f64))
+                            .collect::<Vec<Option<f64>>>();
+                        Series::new(series.name(), &x)
+                    }
+                }
+
                 PolarsDataType::Struct(_str) => {
                     let fm = column_metadata.get(series.name()).unwrap();
                     let logical_type = fm.get("logicalType").unwrap().as_str();
@@ -37,7 +58,6 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> Dat
                             let fields = series.struct_().unwrap().fields();
                             let epoch_series = fields.get(0).unwrap();
                             let fraction_series = fields.get(1).unwrap();
-
 
                             // We need to use from_timestamp as we get them back in a struct
                             let datetimes = epoch_series.iter().zip(fraction_series.iter()).map(
