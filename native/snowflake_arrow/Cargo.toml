@@ -7,13 +7,15 @@ authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
 [lib]
 name = "snowflake_arrow"
 path = "src/lib.rs"
-crate-type = ["cdylib"]
+crate-type = ["dylib"]
 
 [dependencies]
 rustler = { path = "../../../rustler/rustler" }
 rustler_sys = { path = "../../../rustler/rustler_sys" }
 polars = { git = "https://github.com/pola-rs/polars", branch="master", features = ["simd", "performant", "dtype-full", "ipc_streaming", "serde"]}
 chrono = "0.4"
+thiserror = "1"
+anyhow = "1"
 
 [target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
 tikv-jemallocator = { version  = "0.5", features = ["disable_initial_exec_tls"] }

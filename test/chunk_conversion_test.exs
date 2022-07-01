@@ -4,13 +4,16 @@ defmodule SnowflakeArrow.ChunkConversionTest do
   test "Can convert arrow to correct order of rows/columns with elixir types" do
     arrow_data_large = File.read!("benchmark/large_arrow")
 
-    values = SnowflakeArrow.read_arrow_stream_to_columns!(arrow_data_large)
+    values = SnowflakeArrow.convert_snowflake_arrow_stream(arrow_data_large)
 
-    assert length(values) == 14
+    assert length(values) == 16
+    #    IO.inspect values
 
     rows =
       values
-      |> Enum.zip_with(& &1)
+      |> Enum.zip()
+
+    IO.inspect(rows)
 
     assert length(rows) == 139_701
 

@@ -1,7 +1,5 @@
 use rustler::Binary;
-
 use polars::export::arrow::datatypes::Metadata;
-
 use polars::datatypes::{AnyValue, DataType as PolarsDataType, DatetimeChunked};
 use polars::export::chrono::NaiveDateTime;
 use polars::export::rayon::prelude::*;
@@ -9,13 +7,14 @@ use polars::prelude::{DataFrame, IpcStreamReader, NamedFrom, SerReader, Series, 
 use polars::series::IntoSeries;
 use std::collections::HashMap;
 use std::io::Cursor;
+use polars::prelude::Result as PolarsResult;
 
-pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> DataFrame {
+pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> PolarsResult<DataFrame> {
     let c = Cursor::new(binary.as_ref());
 
     let mut stream_reader = IpcStreamReader::new(c);
-    let schema = stream_reader.arrow_schema().unwrap();
-    let df = stream_reader.finish().unwrap();
+    let schema = stream_reader.arrow_schema()?;
+    let df = stream_reader.finish()?;
     let mut column_metadata: HashMap<&str, &Metadata> = HashMap::new();
 
     // We need the field metadata for the timestamp info later.
@@ -88,5 +87,5 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> Dat
         })
         .collect();
 
-    DataFrame::new(new_df).unwrap()
+    DataFrame::new(new_df)
 }

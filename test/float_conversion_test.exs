@@ -13,7 +13,7 @@ defmodule SnowflakeArrow.FloatConversionTest do
       |> SnowflakeArrow.read_arrow_stream_to_columns!()
 
     assert values == [
-             [
+             {
                nil,
                10362.79846742,
                nil,
@@ -24,7 +24,7 @@ defmodule SnowflakeArrow.FloatConversionTest do
                nil,
                19064.12377525,
                nil
-             ]
+             }
            ]
   end
 
@@ -40,7 +40,7 @@ defmodule SnowflakeArrow.FloatConversionTest do
       |> SnowflakeArrow.read_arrow_stream_to_columns!()
 
     assert values == [
-             [
+             {
                3563.39,
                nil,
                26800.24,
@@ -51,7 +51,7 @@ defmodule SnowflakeArrow.FloatConversionTest do
                18247.51,
                19212.24,
                nil
-             ]
+             }
            ]
   end
 end

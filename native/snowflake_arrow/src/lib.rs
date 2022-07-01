@@ -14,13 +14,10 @@ use std::sync::Mutex;
 pub mod polars_convert;
 mod rustler_helper;
 mod snowflake_dataframe;
-
-#[derive(Clone)]
-pub struct Foo(pub DataFrame);
+pub mod error;
 
 pub struct MutableSnowflakeArrowDataframeResource(pub Mutex<DataFrame>);
 pub type MutableSnowflakeArrowDataframeArc = ResourceArc<MutableSnowflakeArrowDataframeResource>;
-// pub struct SnowflakeArrowDataframeResource(pub DataFrame);
 pub struct SnowflakeArrowDataframeResource(pub DataFrame);
 pub type SnowflakeArrowDataframeArc = ResourceArc<SnowflakeArrowDataframeResource>;
 
@@ -32,25 +29,17 @@ fn load(env: Env, _info: Term) -> bool {
 
 mod atoms {
     rustler::atoms! {
-            // Common Atoms
-            ok,
-            error,
+        // Common Atoms
+        ok,
+        error,
 
-            // Resource Atoms
-            bad_reference,
-            lock_fail,
+        // Resource Atoms
+        bad_reference,
+        lock_fail,
 
-            no_dataframe,
-            no_column,
-            hour,
-            minute,
-            second,
-                    day,
-    month, year, microsecond,
-            elixir_calendar_iso = "Elixir.Calendar.ISO",
-            calendar,
-
-        }
+        no_dataframe,
+        no_column,
+    }
 }
 
 rustler::init!(

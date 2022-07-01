@@ -1,12 +1,11 @@
-use crate::atoms::{
-    calendar, day, hour, lock_fail, microsecond, minute, month, no_column, no_dataframe, ok,
-    second, year,
-};
+use crate::atoms::{lock_fail, no_column, no_dataframe, ok};
 use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
-use crate::rustler_helper::atoms::elixir_calendar_iso;
+use crate::rustler_helper::atoms::{
+    calendar, day, elixir_calendar_iso, hour, microsecond, minute, month, second, year,
+};
 use crate::rustler_helper::make_subbinary;
 use crate::{
-    atoms, MutableSnowflakeArrowDataframeArc, MutableSnowflakeArrowDataframeResource,
+    MutableSnowflakeArrowDataframeArc, MutableSnowflakeArrowDataframeResource,
     SnowflakeArrowDataframeArc, SnowflakeArrowDataframeResource,
 };
 use chrono::{Datelike, Timelike};
@@ -19,44 +18,65 @@ use rustler::wrapper::list::make_list;
 use rustler::wrapper::{map, tuple, NIF_TERM};
 use rustler::{Atom, Binary, Encoder, Env, NewBinary, ResourceArc, Term};
 use std::sync::Mutex;
+use polars::prelude::Result as PolarsResult;
+use crate::error::SnowflakeArrowError;
 
-#[rustler::nif(schedule = "DirtyIo")]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn convert_snowflake_arrow_stream_to_df(
     arrow_stream_data: Binary,
-) -> (Atom, MutableSnowflakeArrowDataframeArc) {
+) -> Result<MutableSnowflakeArrowDataframeArc, SnowflakeArrowError> {
     let resource = ResourceArc::new(MutableSnowflakeArrowDataframeResource(Mutex::new(
-        snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data),
+        snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data)?,
     )));
 
-    (atoms::ok(), resource)
+    Ok(resource)
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn convert_snowflake_arrow_stream_to_df_owned(
     arrow_stream_data: Binary,
-) -> Result<SnowflakeArrowDataframeArc, Atom> {
-    let df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data);
+) -> Result<SnowflakeArrowDataframeArc, SnowflakeArrowError> {
+    let df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data)?;
 
     let resource = ResourceArc::new(SnowflakeArrowDataframeResource(df));
 
     Ok(resource)
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn append_snowflake_arrow_stream_to_df(
     resource: ResourceArc<MutableSnowflakeArrowDataframeResource>,
     arrow_stream_data: Binary,
-) -> Atom {
+) -> Result<Atom, SnowflakeArrowError> {
     let mut original_df = match resource.0.try_lock() {
-        Err(_) => return lock_fail(),
+        Err(_) => return Err(SnowflakeArrowError::LockFail),
         Ok(guard) => guard,
     };
 
-    let new_df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data);
+    let new_df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data)?;
 
     match original_df.vstack_mut(&new_df) {
-        Ok(_x) => ok(),
-        Err(_x) => no_dataframe(),
+        Ok(_x) => Ok(ok()),
+        Err(_x) => Err(SnowflakeArrowError::NoDataframe),
+    }
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn get_column(
+    env: Env,
+    resource: ResourceArc<SnowflakeArrowDataframeResource>,
+    column_name: String,
+) -> Result<Term, Atom> {
+    let df = &resource.0;
+
+    // check that the column exists in the dataframe. if it does not, throw an error
+    match df.find_idx_by_name(&column_name) {
+        Some(_col) => {
+            let series = df.column(&column_name).unwrap();
+            let data = get_column_as_c_arg(env, series);
+            Ok(unsafe { Term::new(env, tuple::make_tuple(env.as_c_arg(), &data)) })
+        }
+        None => Err(no_column()),
     }
 }
 
@@ -90,31 +110,12 @@ pub fn to_owned(
     Ok(resource)
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn get_column(
-    env: Env,
-    resource: ResourceArc<SnowflakeArrowDataframeResource>,
-    column_name: String,
-) -> Result<Term, Atom> {
-    let df = &resource.0;
-
-    // check that the column exists in the dataframe. if it does not, throw an error
-    match df.find_idx_by_name(&column_name) {
-        Some(_col) => {
-            let series = df.column(&column_name).unwrap();
-            let data = get_column_as_c_arg(env, series);
-            Ok(unsafe { Term::new(env, tuple::make_tuple(env.as_c_arg(), &data)) })
-        }
-        None => Err(no_column()),
-    }
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn convert_snowflake_arrow_stream<'a>(
     env: Env<'a>,
     arrow_stream_data: Binary,
-) -> Result<Term<'a>, Atom> {
-    let df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data);
+) -> Result<Term<'a>, SnowflakeArrowError> {
+    let df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data)?;
 
     // loop over columns to return as a list of tuples.
     let columns: Vec<NIF_TERM> = df
@@ -128,7 +129,7 @@ pub fn convert_snowflake_arrow_stream<'a>(
     Ok(unsafe { Term::new(env, make_list(env.as_c_arg(), &columns)) })
 }
 
-#[rustler::nif(schedule = "DirtyIo")]
+#[rustler::nif(schedule = "DirtyCpu")]
 pub fn get_column_at(
     env: Env,
     resource: ResourceArc<SnowflakeArrowDataframeResource>,
@@ -148,7 +149,6 @@ pub fn get_column_at(
                 .nth(row_index)
                 .unwrap();
             let encoded = match value {
-                AnyValue::Null => nil().encode(env),
                 AnyValue::Datetime(_a, _b, _c) => {
                     32.encode(env)
                     // <NaiveDateTime as Into<ElixirNaiveDateTime>>::into(timestamp_ms_to_datetime(a)).encode(env)
