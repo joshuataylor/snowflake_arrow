@@ -7,22 +7,23 @@ authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
 [lib]
 name = "snowflake_arrow"
 path = "src/lib.rs"
-crate-type = ["dylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
-rustler = "0.25.0"
-rustler_sys = "2.2.0"
-polars = { git = "https://github.com/joshuataylor/polars", branch="feature/ipc-streaming-lazy", features = ["simd", "performant", "dtype-full", "ipc_streaming"]}
+rustler = { path = "../../../rustler/rustler" }
+rustler_sys = { path = "../../../rustler/rustler_sys" }
+polars = { git = "https://github.com/pola-rs/polars", branch="master", features = ["simd", "performant", "dtype-full", "ipc_streaming", "serde"]}
 chrono = "0.4"
 
 [target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
 tikv-jemallocator = { version  = "0.5", features = ["disable_initial_exec_tls"] }
 
 [profile.release]
-#lto = true
-debug = 1
+#codegen-units = 1
+#lto=true
 incremental = true
 
 [profile.dev]
-#debug = 1
+debug = 1
 opt-level = 3
+#split-debuginfo = "unpacked"

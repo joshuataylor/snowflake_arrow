@@ -13,7 +13,7 @@ defmodule SnowflakeArrow.DateConversionTest do
       |> SnowflakeArrow.read_arrow_stream_to_columns!()
 
     assert values == [
-             [
+             {
                nil,
                nil,
                nil,
@@ -24,7 +24,7 @@ defmodule SnowflakeArrow.DateConversionTest do
                nil,
                nil,
                ~D[2022-07-30]
-             ]
+             }
            ]
   end
 end

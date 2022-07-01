@@ -173,9 +173,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.9"
+version = "0.8.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ff1f980957787286a554052d03c7aee98d99cc32e09f6d45f0a814133c87978"
+checksum = "7d82ee10ce34d7bc12c2122495e7593a9c41347ecdd64185af4ecf72cb1a7f83"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -243,9 +243,9 @@ checksum = "140206b78fb2bc3edbcfc9b5ccbd0b30699cfe8d348b8b31b330e47df5291a5a"
 
 [[package]]
 name = "either"
-version = "1.6.1"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+checksum = "3f107b87b6afc2a64fd13cac55fe06d6c8859f12d4b14cbcdd2c67d0976781be"
 
 [[package]]
 name = "fs_extra"
@@ -312,9 +312,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.9.0"
+version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c6392766afd7964e2531940894cffe4bd8d7d17dbc3c1c4857040fd4b33bdb3"
+checksum = "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
 dependencies = [
  "autocfg",
  "hashbrown",
@@ -572,9 +572,9 @@ dependencies = [
 
 [[package]]
 name = "num-rational"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d41702bd167c2df5520b384281bc111a4b5efcf7fbc4c9c222c815b07e0a6a6a"
+checksum = "0638a1c9d0a3c0914158145bc76cff373a75a627e6ecbfb71cbe6f453a5a19b0"
 dependencies = [
  "autocfg",
  "num-bigint",
@@ -643,7 +643,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "arrow2",
  "hashbrown",
@@ -666,7 +666,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "ahash",
  "anyhow",
@@ -683,6 +683,7 @@ dependencies = [
  "rand_distr",
  "rayon",
  "regex",
+ "serde",
  "smartstring",
  "thiserror",
 ]
@@ -690,7 +691,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "ahash",
  "anyhow",
@@ -715,7 +716,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "ahash",
  "glob",
@@ -732,7 +733,7 @@ dependencies = [
 [[package]]
 name = "polars-ops"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "polars-arrow",
  "polars-core",
@@ -741,7 +742,7 @@ dependencies = [
 [[package]]
 name = "polars-time"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "chrono",
  "lexical",
@@ -753,7 +754,7 @@ dependencies = [
 [[package]]
 name = "polars-utils"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/ipc-streaming-lazy#896e9a8800e50d77286ffc198a511cf95e429bc5"
+source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
 dependencies = [
  "parking_lot",
  "rayon",
@@ -767,18 +768,18 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.39"
+version = "1.0.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c54b25569025b7fc9651de43004ae593a75ad88543b17178aa5e1b9c4f15f56f"
+checksum = "dd96a1e8ed2596c337f8eae5f24924ec83f5ad5ab21ea8e455d3566c69fbcaf7"
 dependencies = [
  "unicode-ident",
 ]
 
 [[package]]
 name = "quote"
-version = "1.0.19"
+version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f53dc8cf16a769a6f677e09e7ff2cd4be1ea0f48754aac39520536962011de0d"
+checksum = "3bcdf212e9776fbcb2d23ab029360416bb1706b1aea2d1a5ba002727cbcab804"
 dependencies = [
  "proc-macro2",
 ]
@@ -887,19 +888,17 @@ checksum = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
 [[package]]
 name = "rustler"
 version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3e6617fa86bacfb2de792c12e261e0f456bb9ff15038498ae421715bf4128c5"
 dependencies = [
  "lazy_static",
+ "rayon",
  "rustler_codegen",
  "rustler_sys",
+ "simdutf8",
 ]
 
 [[package]]
 name = "rustler_codegen"
 version = "0.25.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05cda738bc4260019ee078a699fac55ce3577fe2db736b2cc64a4d6696950fa6"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
@@ -910,8 +909,6 @@ dependencies = [
 [[package]]
 name = "rustler_sys"
 version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ff26a42e62d538f82913dd34f60105ecfdffbdb25abdc3c3580b0c622285332"
 dependencies = [
  "regex",
  "unreachable",
@@ -987,9 +984,9 @@ checksum = "f27f6278552951f1f2b8cf9da965d10969b2efdea95a6ec47987ab46edfe263a"
 
 [[package]]
 name = "smallvec"
-version = "1.8.0"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2dd574626839106c320a323308629dcb1acfc96e32a8cba364ddc61ac23ee83"
+checksum = "2fd0db749597d91ff862fd1d55ea87f7855a744a8425a64695b6fca237d1dad1"
 
 [[package]]
 name = "smartstring"
@@ -1077,9 +1074,9 @@ dependencies = [
 
 [[package]]
 name = "tikv-jemalloc-sys"
-version = "0.5.0+5.3.0"
+version = "0.5.1+5.3.0-patched"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aeab4310214fe0226df8bfeb893a291a58b19682e8a07e1e1d4483ad4200d315"
+checksum = "931e876f91fed0827f863a2d153897790da0b24d882c721a79cb3beb0b903261"
 dependencies = [
  "cc",
  "fs_extra",

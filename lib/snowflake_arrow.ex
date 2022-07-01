@@ -34,10 +34,15 @@ defmodule SnowflakeArrow do
     {:ok, names} = get_column_names(resource)
 
     names
-    |> Stream.map(fn name ->
+    |> Enum.map(fn name ->
       {:ok, data} = get_column(resource, name)
       data
     end)
-    |> Enum.to_list()
+  end
+
+  def convert_snowflake_arrow_stream(data) when is_binary(data) do
+    with {:ok, data} <- Native.convert_snowflake_arrow_stream(data) do
+      data
+    end
   end
 end

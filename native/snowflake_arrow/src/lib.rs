@@ -1,3 +1,5 @@
+extern crate core;
+
 #[cfg(not(target_env = "msvc"))]
 use tikv_jemallocator::Jemalloc;
 
@@ -30,25 +32,36 @@ fn load(env: Env, _info: Term) -> bool {
 
 mod atoms {
     rustler::atoms! {
-        // Common Atoms
-        ok,
-        error,
+            // Common Atoms
+            ok,
+            error,
 
-        // Resource Atoms
-        bad_reference,
-        lock_fail,
+            // Resource Atoms
+            bad_reference,
+            lock_fail,
 
-        no_dataframe,
-        no_column,
-    }
+            no_dataframe,
+            no_column,
+            hour,
+            minute,
+            second,
+                    day,
+    month, year, microsecond,
+            elixir_calendar_iso = "Elixir.Calendar.ISO",
+            calendar,
+
+        }
 }
 
 rustler::init!(
     "Elixir.SnowflakeArrow.Native",
     [
+        snowflake_dataframe::convert_snowflake_arrow_stream,
         snowflake_dataframe::convert_snowflake_arrow_stream_to_df,
+        snowflake_dataframe::convert_snowflake_arrow_stream_to_df_owned,
         snowflake_dataframe::append_snowflake_arrow_stream_to_df,
         snowflake_dataframe::get_column,
+        snowflake_dataframe::get_column_at,
         snowflake_dataframe::get_column_names,
         snowflake_dataframe::to_owned
     ],

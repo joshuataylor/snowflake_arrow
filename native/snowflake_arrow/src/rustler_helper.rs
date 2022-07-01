@@ -24,7 +24,7 @@ pub struct ElixirDate {
     pub calendar: Atom,
 }
 
-#[derive(NifStruct, Copy, Clone, Debug)]
+#[derive(NifStruct)]
 #[module = "NaiveDateTime"]
 pub struct ElixirNaiveDateTime {
     pub calendar: Atom,
@@ -63,6 +63,7 @@ impl From<NaiveDateTime> for ElixirNaiveDateTime {
     }
 }
 
+#[inline(always)]
 pub fn make_subbinary<'a>(
     env: Env<'a>,
     binary: &Binary,
