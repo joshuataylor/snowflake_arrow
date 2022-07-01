@@ -11,10 +11,10 @@ use polars::prelude::DataFrame;
 use rustler::{Env, ResourceArc, Term};
 use std::sync::Mutex;
 
+pub mod error;
 pub mod polars_convert;
 mod rustler_helper;
 mod snowflake_dataframe;
-pub mod error;
 
 pub struct MutableSnowflakeArrowDataframeResource(pub Mutex<DataFrame>);
 pub type MutableSnowflakeArrowDataframeArc = ResourceArc<MutableSnowflakeArrowDataframeResource>;

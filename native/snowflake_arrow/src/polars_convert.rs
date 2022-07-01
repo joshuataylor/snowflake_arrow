@@ -1,15 +1,17 @@
-use rustler::Binary;
-use polars::export::arrow::datatypes::Metadata;
 use polars::datatypes::{AnyValue, DataType as PolarsDataType, DatetimeChunked};
+use polars::export::arrow::datatypes::Metadata;
 use polars::export::chrono::NaiveDateTime;
 use polars::export::rayon::prelude::*;
+use polars::prelude::Result as PolarsResult;
 use polars::prelude::{DataFrame, IpcStreamReader, NamedFrom, SerReader, Series, TimeUnit};
 use polars::series::IntoSeries;
+use rustler::Binary;
 use std::collections::HashMap;
 use std::io::Cursor;
-use polars::prelude::Result as PolarsResult;
 
-pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> PolarsResult<DataFrame> {
+pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
+    binary: &Binary,
+) -> PolarsResult<DataFrame> {
     let c = Cursor::new(binary.as_ref());
 
     let mut stream_reader = IpcStreamReader::new(c);

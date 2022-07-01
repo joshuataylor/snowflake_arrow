@@ -1,4 +1,5 @@
-use crate::atoms::{lock_fail, no_column, no_dataframe, ok};
+use crate::atoms::{no_column, ok};
+use crate::error::SnowflakeArrowError;
 use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
 use crate::rustler_helper::atoms::{
     calendar, day, elixir_calendar_iso, hour, microsecond, minute, month, second, year,
@@ -11,6 +12,7 @@ use crate::{
 use chrono::{Datelike, Timelike};
 use polars::datatypes::{AnyValue, DataType};
 use polars::export::arrow::temporal_conversions::{date32_to_date, timestamp_ms_to_datetime};
+
 use polars::series::Series;
 use rustler::types::atom;
 use rustler::types::atom::nil;
@@ -18,8 +20,6 @@ use rustler::wrapper::list::make_list;
 use rustler::wrapper::{map, tuple, NIF_TERM};
 use rustler::{Atom, Binary, Encoder, Env, NewBinary, ResourceArc, Term};
 use std::sync::Mutex;
-use polars::prelude::Result as PolarsResult;
-use crate::error::SnowflakeArrowError;
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn convert_snowflake_arrow_stream_to_df(
