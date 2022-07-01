@@ -10,6 +10,7 @@ use polars::series::IntoSeries;
 use std::collections::HashMap;
 use std::io::Cursor;
 
+#[inline(always)]
 pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(binary: &Binary) -> DataFrame {
     let c = Cursor::new(binary.as_ref());
 

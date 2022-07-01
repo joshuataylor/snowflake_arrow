@@ -8,6 +8,7 @@ use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use rustler::Atom;
 use rustler::NifStruct;
 use rustler::{Binary, Env, Error, NifResult, Term};
+use serde::{Serialize, Deserialize};
 
 pub mod atoms {
     rustler::atoms! {
@@ -15,19 +16,17 @@ pub mod atoms {
     }
 }
 
-#[derive(NifStruct)]
-#[module = "Date"]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ElixirDate {
     pub year: i32,
     pub month: u32,
     pub day: u32,
-    pub calendar: Atom,
+    // pub calendar: Atom,
 }
 
-#[derive(NifStruct)]
-#[module = "NaiveDateTime"]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ElixirNaiveDateTime {
-    pub calendar: Atom,
+    // pub calendar: Atom,
     pub day: u32,
     pub month: u32,
     pub year: i32,
@@ -43,7 +42,7 @@ impl From<NaiveDate> for ElixirDate {
             year: d.year(),
             month: d.month(),
             day: d.day(),
-            calendar: elixir_calendar_iso(),
+            // calendar: elixir_calendar_iso(),
         }
     }
 }
@@ -51,7 +50,7 @@ impl From<NaiveDate> for ElixirDate {
 impl From<NaiveDateTime> for ElixirNaiveDateTime {
     fn from(dt: NaiveDateTime) -> Self {
         ElixirNaiveDateTime {
-            calendar: elixir_calendar_iso(),
+            // calendar: elixir_calendar_iso(),
             day: dt.day(),
             month: dt.month(),
             year: dt.year(),

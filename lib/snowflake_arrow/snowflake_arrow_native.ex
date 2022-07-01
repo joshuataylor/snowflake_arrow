@@ -9,5 +9,6 @@ defmodule SnowflakeArrow.Native do
   def to_owned(_resource), do: error()
   def get_column(_resource, _column_name), do: error()
   def get_column_names(_resource), do: error()
+  def arrow_to_binary_term_format(_data), do: error()
   defp error, do: :erlang.nif_error(:nif_not_loaded)
 end

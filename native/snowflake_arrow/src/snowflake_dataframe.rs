@@ -4,12 +4,12 @@ use crate::atoms::{
 };
 use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
 use crate::rustler_helper::atoms::elixir_calendar_iso;
-use crate::rustler_helper::make_subbinary;
+use crate::rustler_helper::{ElixirNaiveDateTime, make_subbinary};
 use crate::{
     atoms, MutableSnowflakeArrowDataframeArc, MutableSnowflakeArrowDataframeResource,
     SnowflakeArrowDataframeArc, SnowflakeArrowDataframeResource,
 };
-use chrono::{Datelike, Timelike};
+// use chrono::{Datelike, NaiveDateTime, Timelike};
 use polars::datatypes::{AnyValue, DataType};
 use polars::export::arrow::temporal_conversions::{date32_to_date, timestamp_ms_to_datetime};
 use polars::series::Series;
@@ -19,6 +19,11 @@ use rustler::wrapper::list::make_list;
 use rustler::wrapper::{map, tuple, NIF_TERM};
 use rustler::{Atom, Binary, Encoder, Env, NewBinary, ResourceArc, Term};
 use std::sync::Mutex;
+use chrono::Timelike;
+use eetf::Map;
+// use erlang_term::Term as ErlangTerm;
+use polars::export::chrono::{Datelike, NaiveDateTime};
+use eetf::{Term as ETFTerm, Atom as ETFAtom};
 
 #[rustler::nif(schedule = "DirtyIo")]
 pub fn convert_snowflake_arrow_stream_to_df(
@@ -126,6 +131,91 @@ pub fn convert_snowflake_arrow_stream<'a>(
 
     // build into into a list
     Ok(unsafe { Term::new(env, make_list(env.as_c_arg(), &columns)) })
+}
+
+#[rustler::nif(schedule = "DirtyIo")]
+pub fn arrow_to_binary_term_format<'a>(
+    env: Env<'a>,
+    arrow_stream_data: Binary,
+) -> Result<Term<'a>, Atom> {
+    let df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data);
+    // println!("{:?}", df.get_column_names());
+
+    // get the series for the df we care about
+    let series = df.column("ORDER_PLACED_AT").unwrap();
+
+    // Here we build the NaiveDateTime struct manually, as it's about 4x faster than using NifStruct.
+    // It's faster because we already have the keys (we know this at compile time), and the type.
+    // let struct_keys = [
+    //     atom::__struct__().encode(env).as_c_arg(),
+    //     calendar().encode(env).as_c_arg(),
+    //     microsecond().encode(env).as_c_arg(),
+    //     day().encode(env).as_c_arg(),
+    //     month().encode(env).as_c_arg(),
+    //     year().encode(env).as_c_arg(),
+    //     hour().encode(env).as_c_arg(),
+    //     minute().encode(env).as_c_arg(),
+    //     second().encode(env).as_c_arg(),
+    // ];
+
+    let d = ETFTerm::from(ETFAtom::from("microsecond"));
+
+    // This sets the value in the map to "Elixir.Calendar.ISO", which must be an atom.
+    // let calendar_iso_c_arg = elixir_calendar_iso().encode(env).as_c_arg();
+    //
+    // // This is used for the map to know that it's a struct. Define it here so it's not redefined in the loop.
+    // let module_atom = Atom::from_str(env, "Elixir.NaiveDateTime")
+    //     .unwrap()
+    //     .encode(env)
+    //     .as_c_arg();
+
+    let v = series
+        .datetime()
+        .unwrap()
+        .0
+        .into_iter()
+        .map(|x| {
+            x.map(|dt_value| {
+                let x = timestamp_ms_to_datetime(dt_value);
+                Map::from(vec![(d, Term)])
+            })
+        })
+        .collect::<Vec<Option<ElixirNaiveDateTime>>>();
+
+    // let bytes = to_bytes(&v).unwrap();
+
+    // convert to json
+    // let foo = serde_json::value::to_value(df).unwrap();
+
+    // let json = serde_json::to_value(&df).unwrap();
+    // let new_term: ErlangTerm = serde_json::from_value(json).unwrap();
+    // let output = new_term.to_bytes();
+
+
+
+    let mut values_binary = NewBinary::new(env, bytes.len());
+    values_binary.copy_from_slice(bytes.as_slice());
+
+    let binary: Binary = values_binary.into();
+
+
+    return Ok(binary.to_term(env));
+
+    // return output;
+
+    // return json;
+
+
+    // loop over columns, gathering them as their parts.
+    // let columns: Vec<NIF_TERM> = df
+    //     .iter()
+    //     .map(|series| unsafe {
+    //         tuple::make_tuple(env.as_c_arg(), &get_column_as_c_arg(env, series))
+    //     })
+    //     .collect();
+
+    // build into into a list
+    // Ok(unsafe { Term::new(env, make_list(env.as_c_arg(), &columns)) })
 }
 
 #[rustler::nif(schedule = "DirtyIo")]

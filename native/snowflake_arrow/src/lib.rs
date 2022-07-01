@@ -63,7 +63,8 @@ rustler::init!(
         snowflake_dataframe::get_column,
         snowflake_dataframe::get_column_at,
         snowflake_dataframe::get_column_names,
-        snowflake_dataframe::to_owned
+        snowflake_dataframe::to_owned,
+        snowflake_dataframe::arrow_to_binary_term_format,
     ],
     load = load
 );
