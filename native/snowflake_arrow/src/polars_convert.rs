@@ -9,28 +9,34 @@ use rustler::Binary;
 use std::collections::HashMap;
 use std::io::Cursor;
 
+#[inline]
 pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
     binary: &Binary,
 ) -> PolarsResult<DataFrame> {
-    let c = Cursor::new(binary.as_ref());
+    // Cursor seems like a fine way to do this?
+    let binary_cursor = Cursor::new(binary.as_ref());
 
-    let mut stream_reader = IpcStreamReader::new(c);
+    let mut stream_reader = IpcStreamReader::new(binary_cursor);
     let schema = stream_reader.arrow_schema()?;
     let df = stream_reader.finish()?;
     let mut column_metadata: HashMap<&str, &Metadata> = HashMap::new();
 
     // We need the field metadata for the timestamp info later.
-    for field in schema.fields.iter() {
+    for field in &schema.fields {
         column_metadata.insert(&field.name, &field.metadata);
     }
 
-    let new_df: Vec<Series> = df
+    // Creating a new par iter like this is the fastest way I've found so far.
+    // doing a df replace seems to be slower.
+    // Maybe use more allocations though?
+    let df_series: Vec<Series> = df
         .get_columns()
         .clone()
         .into_par_iter()
-        .map(|series| {
+        .map(move |series| {
             match series.dtype() {
                 PolarsDataType::Int32 => {
+                    // fine to use unwrap here as we know this field exists.
                     let fm = column_metadata.get(series.name()).unwrap();
 
                     if fm.get("scale").unwrap() == "0" {
@@ -38,16 +44,13 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
                     } else {
                         // build f64 from int32
                         let scale = fm.get("scale").unwrap().parse::<i32>().unwrap();
-                        let ca = series.i32().unwrap();
 
                         // Then convert to vec
-                        let to_vec: Vec<Option<i32>> = Vec::from(ca);
-
-                        let x = to_vec
+                        let float64_vec = Vec::from(series.i32().unwrap())
                             .iter()
-                            .map(|v| v.map(|x| x as f64 / 10f64.powi(scale) as f64))
+                            .map(|v| v.map(|x| f64::from(x) / 10f64.powi(scale) as f64))
                             .collect::<Vec<Option<f64>>>();
-                        Series::new(series.name(), &x)
+                        Series::new(series.name(), &float64_vec)
                     }
                 }
 
@@ -89,5 +92,5 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
         })
         .collect();
 
-    DataFrame::new(new_df)
+    DataFrame::new(df_series)
 }

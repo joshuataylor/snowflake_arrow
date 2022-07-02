@@ -47,7 +47,7 @@ dependencies = [
 [[package]]
 name = "arrow2"
 version = "0.12.0"
-source = "git+https://github.com/jorgecarleitao/arrow2?rev=f57dbd5dbc61b940a71decd5f81d0fd4c93b158d#f57dbd5dbc61b940a71decd5f81d0fd4c93b158d"
+source = "git+https://github.com/jorgecarleitao/arrow2?rev=b3583b63215da5bb9eb9fbd44f1c5716d2f47225#b3583b63215da5bb9eb9fbd44f1c5716d2f47225"
 dependencies = [
  "arrow-format",
  "bytemuck",
@@ -643,7 +643,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "arrow2",
  "hashbrown",
@@ -666,7 +666,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "ahash",
  "anyhow",
@@ -683,7 +683,6 @@ dependencies = [
  "rand_distr",
  "rayon",
  "regex",
- "serde",
  "smartstring",
  "thiserror",
 ]
@@ -691,7 +690,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "ahash",
  "anyhow",
@@ -716,7 +715,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "ahash",
  "glob",
@@ -733,7 +732,7 @@ dependencies = [
 [[package]]
 name = "polars-ops"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "polars-arrow",
  "polars-core",
@@ -742,7 +741,7 @@ dependencies = [
 [[package]]
 name = "polars-time"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "chrono",
  "lexical",
@@ -754,7 +753,7 @@ dependencies = [
 [[package]]
 name = "polars-utils"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars?branch=master#9e1ab0ddea77e20cb84045fd21368060bf1d3c9a"
+source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
 dependencies = [
  "parking_lot",
  "rayon",
@@ -888,17 +887,17 @@ checksum = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
 [[package]]
 name = "rustler"
 version = "0.25.0"
+source = "git+https://github.com/rusterlium/rustler#f946092552f8057dabdb13c66fb9364ce03120a3"
 dependencies = [
  "lazy_static",
- "rayon",
  "rustler_codegen",
  "rustler_sys",
- "simdutf8",
 ]
 
 [[package]]
 name = "rustler_codegen"
 version = "0.25.0"
+source = "git+https://github.com/rusterlium/rustler#f946092552f8057dabdb13c66fb9364ce03120a3"
 dependencies = [
  "heck 0.4.0",
  "proc-macro2",
@@ -909,6 +908,7 @@ dependencies = [
 [[package]]
 name = "rustler_sys"
 version = "2.2.0"
+source = "git+https://github.com/rusterlium/rustler#f946092552f8057dabdb13c66fb9364ce03120a3"
 dependencies = [
  "regex",
  "unreachable",

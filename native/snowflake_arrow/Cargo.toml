@@ -7,12 +7,12 @@ authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
 [lib]
 name = "snowflake_arrow"
 path = "src/lib.rs"
-crate-type = ["dylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
-rustler = { path = "../../../rustler/rustler" }
-rustler_sys = { path = "../../../rustler/rustler_sys" }
-polars = { git = "https://github.com/pola-rs/polars", branch="master", features = ["simd", "performant", "dtype-full", "ipc_streaming", "serde"]}
+rustler = { git = "https://github.com/rusterlium/rustler" }
+rustler_sys = { git = "https://github.com/rusterlium/rustler" }
+polars = { git = "https://github.com/joshuataylor/polars", branch="feature/arrow2-bumo", features = ["simd", "performant", "dtype-full", "ipc_streaming"]}
 chrono = "0.4"
 thiserror = "1"
 anyhow = "1"
@@ -21,11 +21,10 @@ anyhow = "1"
 tikv-jemallocator = { version  = "0.5", features = ["disable_initial_exec_tls"] }
 
 [profile.release]
-#codegen-units = 1
-#lto=true
-incremental = true
+codegen-units = 1
+lto=true
+#incremental = true
 
 [profile.dev]
-debug = 1
 opt-level = 3
-#split-debuginfo = "unpacked"
+split-debuginfo = "unpacked"
