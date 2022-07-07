@@ -1,13 +1,14 @@
-use polars::datatypes::{AnyValue, DataType as PolarsDataType, DatetimeChunked};
+use polars::datatypes::{AnyValue, DataType as PolarsDataType, DataType, DatetimeChunked};
 use polars::export::arrow::datatypes::Metadata;
 use polars::export::chrono::NaiveDateTime;
-use polars::export::rayon::prelude::*;
 use polars::prelude::Result as PolarsResult;
 use polars::prelude::{DataFrame, IpcStreamReader, NamedFrom, SerReader, Series, TimeUnit};
 use polars::series::IntoSeries;
 use rustler::Binary;
 use std::collections::HashMap;
 use std::io::Cursor;
+// use polars::export::rayon::iter::IntoParallelRefIterator;
+use polars::export::rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 #[inline]
 pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
@@ -31,16 +32,16 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
     // Maybe use more allocations though?
     let df_series: Vec<Series> = df
         .get_columns()
-        .clone()
-        .into_par_iter()
-        .map(move |series| {
+        .par_iter()
+        .filter(|series| !matches!(series.dtype(), DataType::List(_)))
+        .map(|series| {
             match series.dtype() {
                 PolarsDataType::Int32 => {
                     // fine to use unwrap here as we know this field exists.
                     let fm = column_metadata.get(series.name()).unwrap();
 
                     if fm.get("scale").unwrap() == "0" {
-                        series
+                        series.to_owned()
                     } else {
                         // build f64 from int32
                         let scale = fm.get("scale").unwrap().parse::<i32>().unwrap();
@@ -64,6 +65,7 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
                             let fraction_series = fields.get(1).unwrap();
 
                             // We need to use from_timestamp as we get them back in a struct
+                            // @todo this might be good later to make this parallel?
                             let datetimes = epoch_series.iter().zip(fraction_series.iter()).map(
                                 |(a, b)| match a {
                                     AnyValue::Int64(epoch) => {
@@ -84,10 +86,10 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
                             )
                             .into_series()
                         }
-                        _ => series,
+                        _ => series.to_owned(),
                     }
                 }
-                _ => series,
+                _ => series.to_owned(),
             }
         })
         .collect();

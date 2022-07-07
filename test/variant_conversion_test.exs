@@ -10,10 +10,10 @@ defmodule SnowflakeArrow.VariantConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                nil,
                nil,
                nil,
@@ -24,7 +24,7 @@ defmodule SnowflakeArrow.VariantConversionTest do
                "{\n  \"key_GEHHwmWyxK3dfqFUWeCS\": true\n}",
                nil,
                nil
-             }
+             ]
            ]
   end
 
@@ -37,10 +37,10 @@ defmodule SnowflakeArrow.VariantConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                nil,
                "[\n  12,\n  \"twelve\",\n  undefined\n]",
                nil,
@@ -51,7 +51,7 @@ defmodule SnowflakeArrow.VariantConversionTest do
                nil,
                "[\n  12,\n  \"twelve\",\n  undefined\n]",
                nil
-             }
+             ]
            ]
   end
 
@@ -64,10 +64,10 @@ defmodule SnowflakeArrow.VariantConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                "{\n  \"arr1_IQqqQ\": 13,\n  \"zero\": 0\n}",
                "{\n  \"arr1_2xgjR\": 13,\n  \"zero\": 0\n}",
                nil,
@@ -78,7 +78,7 @@ defmodule SnowflakeArrow.VariantConversionTest do
                "{\n  \"arr1_zNuUH\": 13,\n  \"zero\": 0\n}",
                "{\n  \"arr1_p1Ja8\": 13,\n  \"zero\": 0\n}",
                "{\n  \"arr1_FmKXQ\": 13,\n  \"zero\": 0\n}"
-             }
+             ]
            ]
   end
 end

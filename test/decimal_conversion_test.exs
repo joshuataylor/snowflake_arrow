@@ -10,10 +10,10 @@ defmodule SnowflakeArrow.DecimalConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                21885.79,
                nil,
                nil,
@@ -24,7 +24,7 @@ defmodule SnowflakeArrow.DecimalConversionTest do
                nil,
                17681.54,
                nil
-             }
+             ]
            ]
   end
 end

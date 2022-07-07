@@ -6,20 +6,18 @@ defmodule SnowflakeArrow.ChunkConversionTest do
 
     values = SnowflakeArrow.convert_snowflake_arrow_stream(arrow_data_large)
 
-    assert length(values) == 16
-    #    IO.inspect values
+    # 14 rows, as we don't support binary yet
+    assert length(values) == 14
 
     rows =
       values
       |> Enum.zip()
 
-    IO.inspect(rows)
-
     assert length(rows) == 139_701
 
     # spot check some records
 
-    assert rows |> hd == [
+    assert rows |> hd == {
              198_649,
              nil,
              nil,
@@ -34,6 +32,6 @@ defmodule SnowflakeArrow.ChunkConversionTest do
              "{\n  \"key_489U1idsMBSdRJmIeMfj\": true\n}",
              "[\n  12,\n  \"twelve\",\n  undefined\n]",
              nil
-           ]
+           }
   end
 end

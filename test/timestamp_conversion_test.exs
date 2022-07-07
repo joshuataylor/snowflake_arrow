@@ -12,10 +12,10 @@ defmodule SnowflakeArrow.TimestampConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                nil,
                nil,
                ~N[2022-12-29 07:22:31.484000],
@@ -26,7 +26,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
                nil,
                ~N[2024-11-02 04:19:53.484000],
                ~N[2022-06-08 09:48:05.484000]
-             }
+             ]
            ]
   end
 
@@ -39,10 +39,10 @@ defmodule SnowflakeArrow.TimestampConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                nil,
                nil,
                ~N[2025-07-14 02:12:48.064000],
@@ -53,7 +53,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
                nil,
                ~N[2023-03-17 21:56:41.064000],
                nil
-             }
+             ]
            ]
   end
 
@@ -66,11 +66,11 @@ defmodule SnowflakeArrow.TimestampConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     # NOTE THIS IS WRONG, BUT JUST TESTING THAT IT CONVERTS CORRECTLY!
     assert values == [
-             {
+             [
                nil,
                ~N[2023-09-06 04:56:28.484000],
                ~N[2025-02-15 00:35:26.484000],
@@ -81,7 +81,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
                nil,
                ~N[2022-12-08 01:10:25.484000],
                nil
-             }
+             ]
            ]
   end
 end

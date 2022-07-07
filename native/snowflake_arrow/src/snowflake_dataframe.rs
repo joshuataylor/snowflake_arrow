@@ -6,13 +6,22 @@ use crate::rustler_helper::atoms::{
 use crate::rustler_helper::make_subbinary;
 use chrono::{Datelike, Timelike};
 use polars::datatypes::DataType;
-use polars::export::arrow::temporal_conversions::{date32_to_date, timestamp_ms_to_datetime};
 use polars::prelude::ChunkLen;
 use rustler::types::atom;
 use rustler::types::atom::nil;
 use rustler::wrapper::list::make_list;
-use rustler::wrapper::{map, tuple, NIF_TERM};
+use rustler::wrapper::{map, NIF_TERM};
 use rustler::{Atom, Binary, Encoder, Env, NewBinary, Term};
+
+macro_rules! encode {
+    ($s:ident, $env:ident, $convert_function:ident, $out_type:ty) => {
+        $s.$convert_function()
+            .unwrap()
+            .into_iter()
+            .map(|x| x.map(|d| d as $out_type).encode($env).as_c_arg())
+            .collect::<Vec<NIF_TERM>>()
+    };
+}
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn convert_snowflake_arrow_stream<'a>(
@@ -31,7 +40,7 @@ pub fn convert_snowflake_arrow_stream<'a>(
         year().encode(env).as_c_arg(),
     ];
 
-    // This sets the value in the map to "Elixir.Calendar.ISO", which must be an atom.
+    // // This sets the value in the map to "Elixir.Calendar.ISO", which must be an atom.
     let calendar_iso_c_arg = elixir_calendar_iso().encode(env).as_c_arg();
 
     // This is used for the map to know that it's a struct. Define it here so it's not redefined in the loop.
@@ -67,52 +76,19 @@ pub fn convert_snowflake_arrow_stream<'a>(
     let columns: Vec<NIF_TERM> = df
         .iter()
         .map(|series| unsafe {
-            // let tuples = get_column_as_c_arg(env, &series);
             let tuples = match series.0.dtype() {
-                DataType::Int32 => series
-                    .i32()
-                    .expect("not i32")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as i32).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
-                DataType::Boolean => series
-                    .bool()
-                    .expect("not bool")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as bool).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
-                DataType::Int8 => series
-                    .i8()
-                    .expect("not bool")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as i8).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
-                DataType::Int16 => series
-                    .i16()
-                    .expect("not bool")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as i16).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
-                DataType::Int64 => series
-                    .i64()
-                    .expect("not bool")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as i64).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
-                DataType::Float64 => series
-                    .f64()
-                    .expect("not bool")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as f64).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
+                DataType::Int32 => encode!(series, env, i32, i32),
+                DataType::Boolean => encode!(series, env, bool, bool),
+                DataType::Int8 => encode!(series, env, i8, i8),
+                DataType::Int16 => encode!(series, env, i16, i16),
+                DataType::Int64 => encode!(series, env, i64, i64),
+                DataType::Float64 => encode!(series, env, f64, f64),
                 DataType::Date => series
                     .date()
                     .unwrap()
-                    .0
-                    .into_iter()
+                    .as_date_iter()
                     .map(|x| {
-                        x.map(|date| {
-                            let dt = date32_to_date(date);
+                        x.map(|dt| {
                             let values = [
                                 date_module_atom,
                                 calendar_iso_c_arg,
@@ -137,34 +113,38 @@ pub fn convert_snowflake_arrow_stream<'a>(
                 DataType::Datetime(_tu, _tz) => series
                     .datetime()
                     .unwrap()
-                    .0
-                    .into_iter()
-                    .map(|x| {
-                        x.map(|dt_value| {
-                            let dt = timestamp_ms_to_datetime(dt_value);
-                            let values = &[
-                                datetime_module_atom,
-                                calendar_iso_c_arg,
-                                (dt.timestamp_subsec_micros(), 6).encode(env).as_c_arg(),
-                                dt.day().encode(env).as_c_arg(),
-                                dt.month().encode(env).as_c_arg(),
-                                dt.year().encode(env).as_c_arg(),
-                                dt.hour().encode(env).as_c_arg(),
-                                dt.minute().encode(env).as_c_arg(),
-                                dt.second().encode(env).as_c_arg(),
-                            ];
-                            Term::new(
-                                env,
-                                map::make_map_from_arrays(
-                                    env.as_c_arg(),
-                                    &datetime_struct_keys,
-                                    values,
+                    .as_datetime_iter()
+                    .map(|dt_item| {
+                        dt_item
+                            .map(|dt| {
+                                let mut microseconds = dt.timestamp_subsec_micros();
+                                if microseconds > 999_999 {
+                                    microseconds = 999_999
+                                }
+
+                                let values = &[
+                                    datetime_module_atom,
+                                    calendar_iso_c_arg,
+                                    (microseconds, 6).encode(env).as_c_arg(),
+                                    dt.day().encode(env).as_c_arg(),
+                                    dt.month().encode(env).as_c_arg(),
+                                    dt.year().encode(env).as_c_arg(),
+                                    dt.hour().encode(env).as_c_arg(),
+                                    dt.minute().encode(env).as_c_arg(),
+                                    dt.second().encode(env).as_c_arg(),
+                                ];
+                                Term::new(
+                                    env,
+                                    map::make_map_from_arrays(
+                                        env.as_c_arg(),
+                                        &datetime_struct_keys,
+                                        values,
+                                    )
+                                    .unwrap(),
                                 )
-                                .unwrap(),
-                            )
-                        })
-                        .encode(env)
-                        .as_c_arg()
+                            })
+                            .encode(env)
+                            .as_c_arg()
                     })
                     .collect::<Vec<NIF_TERM>>(),
                 DataType::Utf8 => {
@@ -177,14 +157,14 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     let mut offsets: Vec<usize> = Vec::with_capacity(len);
                     let mut last_offset: usize = 0;
 
+                    // Since we don't slice, we are safe to build the offsets this way.
                     for array in utf8.downcast_iter() {
-                        let mut offset_loop: usize = 0;
-                        for offset in array.offsets().iter().skip(1) {
-                            offset_loop = *offset as usize;
-                            offsets.push(last_offset + offset_loop);
-                        }
+                        let of = array.offsets();
+                        offsets.extend(of.iter().skip(1).map(|x| *x as usize + last_offset));
 
-                        last_offset += offset_loop;
+                        last_offset += *of.last().unwrap() as usize;
+
+                        // last_offset += offset_loop;
                         values.extend(array.values().as_slice());
                     }
 
@@ -192,7 +172,7 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     // This **might** be faster, but I think that allocating it this way is okay
                     // as we know the length already?
                     let mut values_binary = NewBinary::new(env, values.len());
-                    values_binary.copy_from_slice(values.as_slice());
+                    values_binary.copy_from_slice(&values);
 
                     let binary: Binary = values_binary.into();
 
@@ -215,16 +195,12 @@ pub fn convert_snowflake_arrow_stream<'a>(
 
                     binaries
                 }
-                DataType::UInt8 => series
-                    .u8()
-                    .expect("not u8")
-                    .into_iter()
-                    .map(|x| x.map(|d| d as u8).encode(env).as_c_arg())
-                    .collect::<Vec<NIF_TERM>>(),
-                _ => vec![nil; series.len()], // @todo fix this
+                _ => {
+                    vec![nil; series.len()]
+                }
             };
 
-            Term::new(env, tuple::make_tuple(env.as_c_arg(), &tuples)).as_c_arg()
+            Term::new(env, make_list(env.as_c_arg(), &tuples)).as_c_arg()
         })
         .collect();
 

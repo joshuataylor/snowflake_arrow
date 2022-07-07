@@ -47,7 +47,7 @@ dependencies = [
 [[package]]
 name = "arrow2"
 version = "0.12.0"
-source = "git+https://github.com/jorgecarleitao/arrow2?rev=b3583b63215da5bb9eb9fbd44f1c5716d2f47225#b3583b63215da5bb9eb9fbd44f1c5716d2f47225"
+source = "git+https://github.com/jorgecarleitao/arrow2?rev=f5f6b7e3aa10b80dc574abacf96b30e0927410fe#f5f6b7e3aa10b80dc574abacf96b30e0927410fe"
 dependencies = [
  "arrow-format",
  "bytemuck",
@@ -78,9 +78,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bytemuck"
-version = "1.9.1"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdead85bdec19c194affaeeb670c0e41fe23de31459efd1c174d049269cf02cc"
+checksum = "c53dfa917ec274df8ed3c572698f381a24eef2efba9492d797301b72b6db408a"
 dependencies = [
  "bytemuck_derive",
 ]
@@ -604,9 +604,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.12.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
+checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 
 [[package]]
 name = "parking_lot"
@@ -643,7 +643,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "arrow2",
  "hashbrown",
@@ -666,7 +666,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "ahash",
  "anyhow",
@@ -690,7 +690,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "ahash",
  "anyhow",
@@ -715,7 +715,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "ahash",
  "glob",
@@ -732,7 +732,7 @@ dependencies = [
 [[package]]
 name = "polars-ops"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "polars-arrow",
  "polars-core",
@@ -741,7 +741,7 @@ dependencies = [
 [[package]]
 name = "polars-time"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "chrono",
  "lexical",
@@ -753,7 +753,7 @@ dependencies = [
 [[package]]
 name = "polars-utils"
 version = "0.22.6"
-source = "git+https://github.com/joshuataylor/polars?branch=feature/arrow2-bumo#2fea8d16159ba728c5c684ee2b33f5707620ee15"
+source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
 dependencies = [
  "parking_lot",
  "rayon",
@@ -869,9 +869,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.5.6"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d83f127d94bdbcda4c8cc2e50f6f84f4b611f69c902699ca385a39c3a75f9ff1"
+checksum = "4c4eb3267174b8c6c2f654116623910a0fef09c4753f8dd83db29c48a0df988b"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -880,9 +880,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.6.26"
+version = "0.6.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49b3de9ec5dc0a3417da371aab17d729997c15010e7fd24ff707773a33bddb64"
+checksum = "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
 
 [[package]]
 name = "rustler"
@@ -928,18 +928,18 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "serde"
-version = "1.0.137"
+version = "1.0.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61ea8d54c77f8315140a05f4c7237403bf38b72704d031543aa1d16abbf517d1"
+checksum = "1578c6245786b9d168c5447eeacfb96856573ca56c9d68fdcf394be134882a47"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.137"
+version = "1.0.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f26faba0c3959972377d3b2d306ee9f71faee9714294e41bb777f83f88578be"
+checksum = "023e9b1467aef8a10fb88f25611870ada9800ef7e22afce356bb0d2387b6f27c"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -10,10 +10,10 @@ defmodule SnowflakeArrow.TextConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
-             {
+             [
                nil,
                nil,
                "fF7Lk7YKfXtYFsY2fVXN",
@@ -24,7 +24,7 @@ defmodule SnowflakeArrow.TextConversionTest do
                "dBmT57wW3U0pLaJp9PGV",
                nil,
                "XRFjUy5wdbzE7k1z9SSa"
-             }
+             ]
            ]
   end
 end
