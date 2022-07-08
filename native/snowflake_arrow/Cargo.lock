@@ -643,7 +643,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -655,7 +655,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "arrow2",
  "hashbrown",
@@ -666,7 +666,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "ahash",
  "anyhow",
@@ -690,7 +690,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "ahash",
  "anyhow",
@@ -715,7 +715,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "ahash",
  "glob",
@@ -732,7 +732,7 @@ dependencies = [
 [[package]]
 name = "polars-ops"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "polars-arrow",
  "polars-core",
@@ -741,7 +741,7 @@ dependencies = [
 [[package]]
 name = "polars-time"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "chrono",
  "lexical",
@@ -753,7 +753,7 @@ dependencies = [
 [[package]]
 name = "polars-utils"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#7c5bc9edacd0ef859e07f64d873ae293a900d8fb"
+source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
 dependencies = [
  "parking_lot",
  "rayon",

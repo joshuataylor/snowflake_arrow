@@ -6,6 +6,7 @@ use crate::rustler_helper::atoms::{
 use crate::rustler_helper::make_subbinary;
 use chrono::{Datelike, Timelike};
 use polars::datatypes::DataType;
+use polars::export::arrow::array::Array;
 use polars::prelude::ChunkLen;
 use rustler::types::atom;
 use rustler::types::atom::nil;
@@ -158,14 +159,21 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     let mut last_offset: usize = 0;
 
                     // Since we don't slice, we are safe to build the offsets this way.
-                    for array in utf8.downcast_iter() {
-                        let of = array.offsets();
-                        offsets.extend(of.iter().skip(1).map(|x| *x as usize + last_offset));
+                    for array in series.utf8().unwrap().downcast_iter() {
+                        let utf8_array = array
+                            .as_any()
+                            .downcast_ref::<polars::export::arrow::array::Utf8Array<i64>>()
+                            .unwrap();
 
-                        last_offset += *of.last().unwrap() as usize;
+                        let mut offset_loop: usize = 0;
+                        for offset in utf8_array.offsets().iter().skip(1) {
+                            offset_loop = *offset as usize;
+                            offsets.push(last_offset + offset_loop);
+                        }
 
-                        // last_offset += offset_loop;
-                        values.extend(array.values().as_slice());
+                        values.extend(utf8_array.values().as_slice());
+
+                        last_offset += offset_loop;
                     }
 
                     // Can we make a binary straight from the slice?
@@ -199,7 +207,6 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     vec![nil; series.len()]
                 }
             };
-
             Term::new(env, make_list(env.as_c_arg(), &tuples)).as_c_arg()
         })
         .collect();
