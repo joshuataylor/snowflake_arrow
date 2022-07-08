@@ -1,217 +1,215 @@
-use crate::{
-    atoms, DataFrame, MutableSnowflakeArrowDataframeArc, MutableSnowflakeArrowDataframeResource,
-    SnowflakeArrowDataframeArc, SnowflakeArrowDataframeResource,
+use crate::error::SnowflakeArrowError;
+use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
+use crate::rustler_helper::atoms::{
+    calendar, day, elixir_calendar_iso, hour, microsecond, minute, month, second, year,
 };
+use crate::rustler_helper::make_subbinary;
+use chrono::{Datelike, Timelike};
 use polars::datatypes::DataType;
 use polars::export::arrow::array::Array;
-
+use polars::prelude::ChunkLen;
+use rustler::types::atom;
 use rustler::types::atom::nil;
-
-use crate::atoms::{lock_fail, no_column, no_dataframe, ok};
-use crate::rustler_helper::{make_subbinary, ElixirDate, ElixirNaiveDateTime};
-use chrono::{NaiveDate, NaiveDateTime};
-use polars::export::arrow::temporal_conversions::{date32_to_date, timestamp_ms_to_datetime};
 use rustler::wrapper::list::make_list;
-use rustler::wrapper::NIF_TERM;
-use rustler::{Atom, Binary, Encoder, Env, NewBinary, ResourceArc, Term};
-use snowflake_polars::snowflake_arrow_ipc_streaming_binary_to_dataframe;
-use std::sync::Mutex;
-// use crate::rustler_helper::SnowflakeArrowBinary;
+use rustler::wrapper::{map, NIF_TERM};
+use rustler::{Atom, Binary, Encoder, Env, NewBinary, Term};
 
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn convert_snowflake_arrow_stream_to_df(
-    arrow_stream_data: Binary,
-) -> (Atom, MutableSnowflakeArrowDataframeArc) {
-    let resource = ResourceArc::new(MutableSnowflakeArrowDataframeResource(Mutex::new(
-        snowflake_arrow_ipc_streaming_binary_to_dataframe(&mut arrow_stream_data.as_ref()).unwrap(),
-    )));
-
-    (atoms::ok(), resource)
-}
-
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn append_snowflake_arrow_stream_to_df(
-    resource: ResourceArc<MutableSnowflakeArrowDataframeResource>,
-    arrow_stream_data: Binary,
-) -> Atom {
-    let mut original_df = match resource.0.try_lock() {
-        Err(_) => return lock_fail(),
-        Ok(guard) => guard,
+macro_rules! encode {
+    ($s:ident, $env:ident, $convert_function:ident, $out_type:ty) => {
+        $s.$convert_function()
+            .unwrap()
+            .into_iter()
+            .map(|x| x.map(|d| d as $out_type).encode($env).as_c_arg())
+            .collect::<Vec<NIF_TERM>>()
     };
-
-    let new_df =
-        snowflake_arrow_ipc_streaming_binary_to_dataframe(&mut arrow_stream_data.as_ref()).unwrap();
-
-    match original_df.vstack_mut(&new_df) {
-        Ok(_x) => ok(),
-        Err(_x) => no_dataframe(),
-    }
 }
 
 #[rustler::nif(schedule = "DirtyCpu")]
-pub fn get_column_names(
-    env: Env,
-    resource: ResourceArc<SnowflakeArrowDataframeResource>,
-) -> Result<Term, Atom> {
-    let df = &resource.0;
-    Ok(df.get_column_names().encode(env))
-}
+pub fn convert_snowflake_arrow_stream<'a>(
+    env: Env<'a>,
+    arrow_stream_data: Binary,
+) -> Result<Term<'a>, SnowflakeArrowError> {
+    let df = snowflake_arrow_ipc_streaming_binary_to_dataframe(&arrow_stream_data)?;
+    // Here we build the Date struct manually, as it's much faster than using Date NifStruct
+    // This is because we already have the keys (we know this at compile time), and the types,
+    // so we can build the struct directly.
+    let date_struct_keys = [
+        atom::__struct__().encode(env).as_c_arg(),
+        calendar().encode(env).as_c_arg(),
+        day().encode(env).as_c_arg(),
+        month().encode(env).as_c_arg(),
+        year().encode(env).as_c_arg(),
+    ];
 
-#[rustler::nif(schedule = "DirtyCpu")]
-pub fn to_owned(
-    resource: ResourceArc<MutableSnowflakeArrowDataframeResource>,
-) -> Result<SnowflakeArrowDataframeArc, Atom> {
-    let mut df = match resource.0.try_lock() {
-        Err(_) => return Err(nil()),
-        Ok(guard) => guard,
-    };
+    // // This sets the value in the map to "Elixir.Calendar.ISO", which must be an atom.
+    let calendar_iso_c_arg = elixir_calendar_iso().encode(env).as_c_arg();
 
-    // We should rechunk here, as we've added data to it. We need to make sure that the data is in the right order.
-    df.rechunk();
+    // This is used for the map to know that it's a struct. Define it here so it's not redefined in the loop.
+    let date_module_atom = Atom::from_str(env, "Elixir.Date")
+        .unwrap()
+        .encode(env)
+        .as_c_arg();
 
-    // As the dataframe does not have copy, we have to use a clone. Is this bad?
-    // @todo can we now drop the mutable one, and just return the immutable one? I think it'll be GCd?
-    let immutable_df = df.clone();
+    // Here we build the NaiveDateTime struct manually, as it's about 4x faster than using NifStruct.
+    // It's faster because we already have the keys (we know this at compile time), and the type.
+    let datetime_struct_keys = [
+        atom::__struct__().encode(env).as_c_arg(),
+        calendar().encode(env).as_c_arg(),
+        microsecond().encode(env).as_c_arg(),
+        day().encode(env).as_c_arg(),
+        month().encode(env).as_c_arg(),
+        year().encode(env).as_c_arg(),
+        hour().encode(env).as_c_arg(),
+        minute().encode(env).as_c_arg(),
+        second().encode(env).as_c_arg(),
+    ];
 
-    let resource = ResourceArc::new(SnowflakeArrowDataframeResource(immutable_df));
+    // This is used for the map to know that it's a struct. Define it here so it's not redefined in the loop.
+    let datetime_module_atom = Atom::from_str(env, "Elixir.NaiveDateTime")
+        .unwrap()
+        .encode(env)
+        .as_c_arg();
+    let nil = nil().encode(env).as_c_arg();
 
-    Ok(resource)
-}
+    // loop over columns to return as a list of tuples.
+    // We can't use par_iter here as we need to env to encode the tuples to c_arg.
+    // @todo can we somehow make this parallel later by using a generic type that holds the iter?
+    let columns: Vec<NIF_TERM> = df
+        .iter()
+        .map(|series| unsafe {
+            let tuples = match series.0.dtype() {
+                DataType::Int32 => encode!(series, env, i32, i32),
+                DataType::Boolean => encode!(series, env, bool, bool),
+                DataType::Int8 => encode!(series, env, i8, i8),
+                DataType::Int16 => encode!(series, env, i16, i16),
+                DataType::Int64 => encode!(series, env, i64, i64),
+                DataType::Float64 => encode!(series, env, f64, f64),
+                DataType::Date => series
+                    .date()
+                    .unwrap()
+                    .as_date_iter()
+                    .map(|x| {
+                        x.map(|dt| {
+                            let values = [
+                                date_module_atom,
+                                calendar_iso_c_arg,
+                                dt.day().encode(env).as_c_arg(),
+                                dt.month().encode(env).as_c_arg(),
+                                dt.year().encode(env).as_c_arg(),
+                            ];
+                            Term::new(
+                                env,
+                                map::make_map_from_arrays(
+                                    env.as_c_arg(),
+                                    &date_struct_keys,
+                                    &values,
+                                )
+                                .unwrap(),
+                            )
+                        })
+                        .encode(env)
+                        .as_c_arg()
+                    })
+                    .collect::<Vec<NIF_TERM>>(),
+                DataType::Datetime(_tu, _tz) => series
+                    .datetime()
+                    .unwrap()
+                    .as_datetime_iter()
+                    .map(|dt_item| {
+                        dt_item
+                            .map(|dt| {
+                                let mut microseconds = dt.timestamp_subsec_micros();
+                                if microseconds > 999_999 {
+                                    microseconds = 999_999
+                                }
 
-#[rustler::nif(schedule = "DirtyIo")]
-pub fn get_column(
-    env: Env,
-    resource: ResourceArc<SnowflakeArrowDataframeResource>,
-    column_name: String,
-) -> Result<Term, Atom> {
-    let df = &resource.0;
+                                let values = &[
+                                    datetime_module_atom,
+                                    calendar_iso_c_arg,
+                                    (microseconds, 6).encode(env).as_c_arg(),
+                                    dt.day().encode(env).as_c_arg(),
+                                    dt.month().encode(env).as_c_arg(),
+                                    dt.year().encode(env).as_c_arg(),
+                                    dt.hour().encode(env).as_c_arg(),
+                                    dt.minute().encode(env).as_c_arg(),
+                                    dt.second().encode(env).as_c_arg(),
+                                ];
+                                Term::new(
+                                    env,
+                                    map::make_map_from_arrays(
+                                        env.as_c_arg(),
+                                        &datetime_struct_keys,
+                                        values,
+                                    )
+                                    .unwrap(),
+                                )
+                            })
+                            .encode(env)
+                            .as_c_arg()
+                    })
+                    .collect::<Vec<NIF_TERM>>(),
+                DataType::Utf8 => {
+                    // This is goofy and stupid, but drastically speeds up converting binaries.
+                    // What we do here is take all the values/offsets, create a binary, then subslice into it.
+                    // @todo fix this later to be less terrible.
+                    let utf8 = series.utf8().unwrap();
+                    let len = utf8.len();
+                    let mut values = Vec::with_capacity(len);
+                    let mut offsets: Vec<usize> = Vec::with_capacity(len);
+                    let mut last_offset: usize = 0;
 
-    // check that the column exists in the dataframe. if it does not, throw an error
-    match df.find_idx_by_name(&column_name) {
-        Some(_col) => {
-            let data = get_column_as_c_arg(env, column_name, df);
+                    // Since we don't slice, we are safe to build the offsets this way.
+                    for array in series.utf8().unwrap().downcast_iter() {
+                        let utf8_array = array
+                            .as_any()
+                            .downcast_ref::<polars::export::arrow::array::Utf8Array<i64>>()
+                            .unwrap();
 
-            // Ok(unsafe { Term::new(env, data) })
-            Ok(unsafe { Term::new(env, make_list(env.as_c_arg(), &data)) })
-        }
-        None => Err(no_column()),
-    }
-}
+                        let mut offset_loop: usize = 0;
+                        for offset in utf8_array.offsets().iter().skip(1) {
+                            offset_loop = *offset as usize;
+                            offsets.push(last_offset + offset_loop);
+                        }
 
-fn get_column_as_c_arg(env: Env, column_name: String, df: &DataFrame) -> Vec<NIF_TERM> {
-    let series = df.column(&column_name).unwrap();
-    return match series.0.dtype() {
-        DataType::Int32 => series
-            .i32()
-            .expect("not i32")
-            .into_iter()
-            .map(|x| x.map(|d| d as i32).encode(env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Boolean => series
-            .bool()
-            .expect("not bool")
-            .into_iter()
-            .map(|x| x.map(|d| d as bool).encode(env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Int8 => series
-            .i8()
-            .expect("not bool")
-            .into_iter()
-            .map(|x| x.map(|d| d as i8).encode(env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Int16 => series
-            .i16()
-            .expect("not bool")
-            .into_iter()
-            .map(|x| x.map(|d| d as i16).encode(env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Int64 => series
-            .i64()
-            .expect("not bool")
-            .into_iter()
-            .map(|x| x.map(|d| d as i64).encode(env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Float64 => series
-            .f64()
-            .expect("not bool")
-            .into_iter()
-            .map(|x| x.map(|d| d as f64).encode(env).as_c_arg())
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Date => series
-            .date()
-            .unwrap()
-            .0
-            .into_iter()
-            .map(|x| {
-                x.map(|date| <NaiveDate as Into<ElixirDate>>::into(date32_to_date(date)))
-                    .encode(env)
-                    .as_c_arg()
-            })
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Datetime(_tu, _tz) => series
-            .datetime()
-            .unwrap()
-            .0
-            .into_iter()
-            .map(|x| {
-                x.map(|date| {
-                    <NaiveDateTime as Into<ElixirNaiveDateTime>>::into(timestamp_ms_to_datetime(
-                        date,
-                    ))
-                })
-                .encode(env)
-                .as_c_arg()
-            })
-            .collect::<Vec<NIF_TERM>>(),
-        DataType::Utf8 => {
-            // This is goofy and stupid, but drastically speeds up converting binaries to strings.
-            // This function should be optimised later.
+                        values.extend(utf8_array.values().as_slice());
 
-            let mut values: Vec<u8> = Vec::new();
-            let mut last_offset: usize = 0;
-            let mut offsets: Vec<usize> = Vec::new();
+                        last_offset += offset_loop;
+                    }
 
-            for array in series.utf8().unwrap().downcast_iter() {
-                let utf8_array = array
-                    .as_any()
-                    .downcast_ref::<polars::export::arrow::array::Utf8Array<i64>>()
-                    .unwrap();
+                    // Can we make a binary straight from the slice?
+                    // This **might** be faster, but I think that allocating it this way is okay
+                    // as we know the length already?
+                    let mut values_binary = NewBinary::new(env, values.len());
+                    values_binary.copy_from_slice(&values);
 
-                let mut offset_loop: usize = 0;
-                for offset in utf8_array.offsets().iter().skip(1) {
-                    offset_loop = *offset as usize;
-                    offsets.push(last_offset + offset_loop);
+                    let binary: Binary = values_binary.into();
+
+                    // Now we slice into the binary.
+                    let mut last_offset: usize = 0;
+                    let mut binaries: Vec<NIF_TERM> = Vec::with_capacity(offsets.len());
+                    for offset in offsets {
+                        if last_offset == offset {
+                            last_offset = offset;
+                            binaries.push(nil);
+                        } else {
+                            let slice =
+                                make_subbinary(env, &binary, last_offset, offset - last_offset)
+                                    .unwrap()
+                                    .as_c_arg();
+                            binaries.push(slice);
+                            last_offset = offset;
+                        }
+                    }
+
+                    binaries
                 }
-
-                values.extend(utf8_array.values().as_slice());
-
-                last_offset += offset_loop;
-            }
-
-            let mut values_binary = NewBinary::new(env, values.len());
-            values_binary
-                .as_mut_slice()
-                .copy_from_slice(values.as_slice());
-
-            let binary: Binary = values_binary.into();
-
-            let mut last_offset: usize = 0;
-            let mut binaries: Vec<NIF_TERM> = Vec::with_capacity(offsets.len());
-            for offset in offsets {
-                if last_offset == offset {
-                    last_offset = offset;
-                    binaries.push(nil().encode(env).as_c_arg());
-                } else {
-                    let slice = make_subbinary(env, &binary, last_offset, offset - last_offset)
-                        .unwrap()
-                        .as_c_arg();
-                    binaries.push(slice);
-                    last_offset = offset;
+                _ => {
+                    vec![nil; series.len()]
                 }
-            }
+            };
+            Term::new(env, make_list(env.as_c_arg(), &tuples)).as_c_arg()
+        })
+        .collect();
 
-            binaries
-        }
-        dt => vec![format!("{:?}", dt).encode(env).as_c_arg()],
-    };
+    Ok(unsafe { Term::new(env, make_list(env.as_c_arg(), &columns)) })
 }

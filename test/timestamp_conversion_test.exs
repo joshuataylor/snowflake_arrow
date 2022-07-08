@@ -12,7 +12,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
              [
@@ -39,7 +39,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     assert values == [
              [
@@ -66,7 +66,7 @@ defmodule SnowflakeArrow.TimestampConversionTest do
         ])
       )
       |> Base.decode64!()
-      |> SnowflakeArrow.read_arrow_stream_to_columns!()
+      |> SnowflakeArrow.convert_snowflake_arrow_stream()
 
     # NOTE THIS IS WRONG, BUT JUST TESTING THAT IT CONVERTS CORRECTLY!
     assert values == [

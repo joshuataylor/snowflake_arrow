@@ -6,17 +6,22 @@
 use crate::rustler_helper::atoms::elixir_calendar_iso;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use rustler::Atom;
-use rustler::NifStruct;
 use rustler::{Binary, Env, Error, NifResult, Term};
 
 pub mod atoms {
     rustler::atoms! {
-      elixir_calendar_iso = "Elixir.Calendar.ISO"
+        hour,
+        minute,
+        second,
+        day,
+        month,
+        year,
+        microsecond,
+        elixir_calendar_iso = "Elixir.Calendar.ISO",
+        calendar
     }
 }
 
-#[derive(NifStruct)]
-#[module = "Date"]
 pub struct ElixirDate {
     pub year: i32,
     pub month: u32,
@@ -24,8 +29,6 @@ pub struct ElixirDate {
     pub calendar: Atom,
 }
 
-#[derive(NifStruct, Copy, Clone, Debug)]
-#[module = "NaiveDateTime"]
 pub struct ElixirNaiveDateTime {
     pub calendar: Atom,
     pub day: u32,
@@ -63,6 +66,7 @@ impl From<NaiveDateTime> for ElixirNaiveDateTime {
     }
 }
 
+#[inline]
 pub fn make_subbinary<'a>(
     env: Env<'a>,
     binary: &Binary,
@@ -84,7 +88,5 @@ pub fn make_subbinary<'a>(
         )
     };
 
-    let bar = unsafe { Term::new(env, raw_term) };
-
-    Ok(bar)
+    Ok(unsafe { Term::new(env, raw_term) })
 }

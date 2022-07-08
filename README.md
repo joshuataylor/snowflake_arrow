@@ -7,7 +7,9 @@ allow Snowflake to send back Arrow results which this library will parse.
 
 This library uses [Rustler](https://github.com/rusterlium/rustler) to create a Rust binding to [Arrow2](https://github.com/jorgecarleitao/arrow2) library.
 
-Arrow2 has been chosen as it also the underlying library for [Polars](https://github.com/pola-rs/polars), which is what [Explorer](https://github.com/elixir-nx/explorer) uses.
+Performance has been given a priority, so some workarounds have had to be made to get good performance, as we are returning datasets.
+
+Data is returned from [Polars](https://github.com/pola-rs/polars), which is what [Explorer](https://github.com/elixir-nx/explorer) uses.
 
 ## Installation
 
@@ -21,13 +23,14 @@ end
 
 ## Features
 
-- Cast to to [DateTime](https://hexdocs.pm/elixir/1.12.3/DateTime.html) & [Date](https://hexdocs.pm/elixir/1.13/Date.html) from within Rust, which will allow you to not have to cast them yourself (if not set, will cast to strings with the date/datetime value)
+- Cast to [DateTime](https://hexdocs.pm/elixir/1.12.3/DateTime.html) & [Date](https://hexdocs.pm/elixir/1.13/Date.html) from within Rust.
+- Custom Snowflake types (`TIMESTAMP_TZ`, `TIMESTAMP_NTZ`, `TIMESTAMP_LTZ`) supported.
+- Optimised for speed
 
 ## Snowflake Notes
-- Snowflake seems to have been an early adopter for Arrow, and some of their design decisions around timestamps are now Arrow types. We can't directly parse a Snowflake Arrow Streaming file with something like Explorer, as timestamps etc won't work.
+Snowflake send back Timestamps in Structs which include the timezone. This is casted to their proper types during import,
+which Polars makes incredibly easy.
 
 ## Benchmarks
 
 Benchmarks are hard to compare against the JSON implementation of Snowflake, as the JSON implementation doesn't return the same results as the Arrow implementation.
-
-Using Rustler, sending back timestamps as unix timestamps is quicker than sending back timestamps as Datetime structs.

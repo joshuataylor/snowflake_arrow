@@ -1,3 +1,4 @@
+extern crate core;
 #[cfg(not(target_env = "msvc"))]
 use tikv_jemallocator::Jemalloc;
 
@@ -9,15 +10,12 @@ use polars::prelude::DataFrame;
 use rustler::{Env, ResourceArc, Term};
 use std::sync::Mutex;
 
+pub mod error;
+pub mod polars_convert;
 mod rustler_helper;
 mod snowflake_dataframe;
-
-#[derive(Clone)]
-pub struct Foo(pub DataFrame);
-
 pub struct MutableSnowflakeArrowDataframeResource(pub Mutex<DataFrame>);
 pub type MutableSnowflakeArrowDataframeArc = ResourceArc<MutableSnowflakeArrowDataframeResource>;
-// pub struct SnowflakeArrowDataframeResource(pub DataFrame);
 pub struct SnowflakeArrowDataframeResource(pub DataFrame);
 pub type SnowflakeArrowDataframeArc = ResourceArc<SnowflakeArrowDataframeResource>;
 
@@ -44,12 +42,6 @@ mod atoms {
 
 rustler::init!(
     "Elixir.SnowflakeArrow.Native",
-    [
-        snowflake_dataframe::convert_snowflake_arrow_stream_to_df,
-        snowflake_dataframe::append_snowflake_arrow_stream_to_df,
-        snowflake_dataframe::get_column,
-        snowflake_dataframe::get_column_names,
-        snowflake_dataframe::to_owned
-    ],
+    [snowflake_dataframe::convert_snowflake_arrow_stream],
     load = load
 );
