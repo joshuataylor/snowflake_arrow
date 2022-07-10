@@ -7,7 +7,6 @@ use crate::rustler_helper::atoms::elixir_calendar_iso;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use rustler::Atom;
 
-
 pub mod atoms {
     rustler::atoms! {
         hour,

@@ -5,9 +5,8 @@ use polars::prelude::Result as PolarsResult;
 use polars::prelude::{DataFrame, IpcStreamReader, NamedFrom, SerReader, Series, TimeUnit};
 use polars::series::IntoSeries;
 use rustler::Binary;
-use std::collections::HashMap;
 use std::io::Cursor;
-// use polars::export::rayon::iter::IntoParallelRefIterator;
+use ahash::AHashMap;
 use polars::export::rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 #[inline]
@@ -20,7 +19,7 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
     let mut stream_reader = IpcStreamReader::new(binary_cursor);
     let schema = stream_reader.arrow_schema()?;
     let df = stream_reader.finish()?;
-    let mut column_metadata: HashMap<&str, &Metadata> = HashMap::new();
+    let mut column_metadata: AHashMap<&str, &Metadata> = AHashMap::new();
 
     // We need the field metadata for the timestamp info later.
     for field in &schema.fields {

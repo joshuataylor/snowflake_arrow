@@ -3,7 +3,6 @@ use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
 use crate::rustler_helper::atoms::{
     calendar, day, elixir_calendar_iso, hour, microsecond, minute, month, second, year,
 };
-
 use chrono::{Datelike, Timelike};
 use polars::datatypes::DataType;
 use polars::export::arrow::array::Array;
@@ -89,8 +88,9 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     .date()
                     .unwrap()
                     .as_date_iter()
-                    .map(|x| {
-                        x.map(|dt| {
+                    .map(|x| match x {
+                        None => nil,
+                        Some(dt) => {
                             let values = [
                                 date_module_atom,
                                 calendar_iso_c_arg,
@@ -107,9 +107,8 @@ pub fn convert_snowflake_arrow_stream<'a>(
                                 )
                                 .unwrap(),
                             )
-                        })
-                        .encode(env)
-                        .as_c_arg()
+                            .as_c_arg()
+                        }
                     })
                     .collect::<Vec<NIF_TERM>>(),
                 DataType::Datetime(_tu, _tz) => series

@@ -7,7 +7,7 @@ authors = ["Josh Taylor <joshuataylorx@gmail.com>"]
 [lib]
 name = "snowflake_arrow"
 path = "src/lib.rs"
-crate-type = ["dylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 rustler = { git = "https://github.com/rusterlium/rustler" }
