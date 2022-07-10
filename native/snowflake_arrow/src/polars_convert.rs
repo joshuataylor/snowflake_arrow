@@ -33,6 +33,7 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
     let df_series: Vec<Series> = df
         .get_columns()
         .par_iter()
+        .cloned()
         .filter(|series| !matches!(series.dtype(), DataType::List(_)))
         .map(|series| {
             match series.dtype() {
@@ -41,7 +42,7 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
                     let fm = column_metadata.get(series.name()).unwrap();
 
                     if fm.get("scale").unwrap() == "0" {
-                        series.to_owned()
+                        series
                     } else {
                         // build f64 from int32
                         let scale = fm.get("scale").unwrap().parse::<i32>().unwrap();
@@ -86,10 +87,10 @@ pub fn snowflake_arrow_ipc_streaming_binary_to_dataframe(
                             )
                             .into_series()
                         }
-                        _ => series.to_owned(),
+                        _ => series,
                     }
                 }
-                _ => series.to_owned(),
+                _ => series,
             }
         })
         .collect();

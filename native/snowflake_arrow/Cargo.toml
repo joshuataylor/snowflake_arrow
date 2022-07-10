@@ -16,6 +16,7 @@ polars = { git = "https://github.com/pola-rs/polars", features = ["simd", "perfo
 chrono = "0.4"
 thiserror = "1"
 anyhow = "1"
+ahash = "0.7.6"
 
 [target.'cfg(not(any(all(windows, target_env = "gnu"), all(target_os = "linux", target_env = "musl"))))'.dependencies]
 tikv-jemallocator = { version  = "0.5", features = ["disable_initial_exec_tls"] }

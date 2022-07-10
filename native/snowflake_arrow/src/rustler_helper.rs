@@ -6,7 +6,7 @@
 use crate::rustler_helper::atoms::elixir_calendar_iso;
 use chrono::{Datelike, NaiveDate, NaiveDateTime, Timelike};
 use rustler::Atom;
-use rustler::{Binary, Env, Error, NifResult, Term};
+
 
 pub mod atoms {
     rustler::atoms! {
@@ -64,29 +64,4 @@ impl From<NaiveDateTime> for ElixirNaiveDateTime {
             microsecond: (dt.timestamp_subsec_micros(), 6),
         }
     }
-}
-
-#[inline]
-pub fn make_subbinary<'a>(
-    env: Env<'a>,
-    binary: &Binary,
-    offset: usize,
-    length: usize,
-) -> NifResult<Term<'a>> {
-    let min_len = length.checked_add(offset);
-    if min_len.ok_or(Error::BadArg)? > binary.len() {
-        return Err(Error::BadArg);
-    }
-    let term = binary.to_term(env);
-
-    let raw_term = unsafe {
-        rustler_sys::enif_make_sub_binary(
-            term.get_env().as_c_arg(),
-            term.as_c_arg(),
-            offset,
-            length,
-        )
-    };
-
-    Ok(unsafe { Term::new(env, raw_term) })
 }

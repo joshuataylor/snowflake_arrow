@@ -3,7 +3,7 @@ use crate::polars_convert::snowflake_arrow_ipc_streaming_binary_to_dataframe;
 use crate::rustler_helper::atoms::{
     calendar, day, elixir_calendar_iso, hour, microsecond, minute, month, second, year,
 };
-use crate::rustler_helper::make_subbinary;
+
 use chrono::{Datelike, Timelike};
 use polars::datatypes::DataType;
 use polars::export::arrow::array::Array;
@@ -70,6 +70,7 @@ pub fn convert_snowflake_arrow_stream<'a>(
         .encode(env)
         .as_c_arg();
     let nil = nil().encode(env).as_c_arg();
+    let env_carg = env.as_c_arg();
 
     // loop over columns to return as a list of tuples.
     // We can't use par_iter here as we need to env to encode the tuples to c_arg.
@@ -115,37 +116,36 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     .datetime()
                     .unwrap()
                     .as_datetime_iter()
-                    .map(|dt_item| {
-                        dt_item
-                            .map(|dt| {
-                                let mut microseconds = dt.timestamp_subsec_micros();
-                                if microseconds > 999_999 {
-                                    microseconds = 999_999
-                                }
+                    .map(|dt_item| match dt_item {
+                        None => nil,
+                        Some(dt) => {
+                            let mut microseconds = dt.timestamp_subsec_micros();
+                            if microseconds > 999_999 {
+                                microseconds = 999_999;
+                            }
 
-                                let values = &[
-                                    datetime_module_atom,
-                                    calendar_iso_c_arg,
-                                    (microseconds, 6).encode(env).as_c_arg(),
-                                    dt.day().encode(env).as_c_arg(),
-                                    dt.month().encode(env).as_c_arg(),
-                                    dt.year().encode(env).as_c_arg(),
-                                    dt.hour().encode(env).as_c_arg(),
-                                    dt.minute().encode(env).as_c_arg(),
-                                    dt.second().encode(env).as_c_arg(),
-                                ];
-                                Term::new(
-                                    env,
-                                    map::make_map_from_arrays(
-                                        env.as_c_arg(),
-                                        &datetime_struct_keys,
-                                        values,
-                                    )
-                                    .unwrap(),
+                            let values = &[
+                                datetime_module_atom,
+                                calendar_iso_c_arg,
+                                (microseconds, 6).encode(env).as_c_arg(),
+                                dt.day().encode(env).as_c_arg(),
+                                dt.month().encode(env).as_c_arg(),
+                                dt.year().encode(env).as_c_arg(),
+                                dt.hour().encode(env).as_c_arg(),
+                                dt.minute().encode(env).as_c_arg(),
+                                dt.second().encode(env).as_c_arg(),
+                            ];
+                            Term::new(
+                                env,
+                                map::make_map_from_arrays(
+                                    env.as_c_arg(),
+                                    &datetime_struct_keys,
+                                    values,
                                 )
-                            })
-                            .encode(env)
+                                .unwrap(),
+                            )
                             .as_c_arg()
+                        }
                     })
                     .collect::<Vec<NIF_TERM>>(),
                 DataType::Utf8 => {
@@ -171,10 +171,11 @@ pub fn convert_snowflake_arrow_stream<'a>(
                             offsets.push(last_offset + offset_loop);
                         }
 
-                        values.extend(utf8_array.values().as_slice());
+                        values.extend_from_slice(utf8_array.values().as_slice());
 
                         last_offset += offset_loop;
                     }
+                    values.shrink_to_fit();
 
                     // Can we make a binary straight from the slice?
                     // This **might** be faster, but I think that allocating it this way is okay
@@ -183,25 +184,29 @@ pub fn convert_snowflake_arrow_stream<'a>(
                     values_binary.copy_from_slice(&values);
 
                     let binary: Binary = values_binary.into();
+                    let binary_carg = binary.to_term(env).as_c_arg();
 
                     // Now we slice into the binary.
                     let mut last_offset: usize = 0;
-                    let mut binaries: Vec<NIF_TERM> = Vec::with_capacity(offsets.len());
+                    let mut sub_binaries: Vec<NIF_TERM> = Vec::with_capacity(offsets.len());
                     for offset in offsets {
                         if last_offset == offset {
                             last_offset = offset;
-                            binaries.push(nil);
+                            sub_binaries.push(nil);
                         } else {
-                            let slice =
-                                make_subbinary(env, &binary, last_offset, offset - last_offset)
-                                    .unwrap()
-                                    .as_c_arg();
-                            binaries.push(slice);
+                            let raw_term = rustler_sys::enif_make_sub_binary(
+                                env_carg,
+                                binary_carg,
+                                last_offset,
+                                offset - last_offset,
+                            );
+
+                            sub_binaries.push(raw_term);
                             last_offset = offset;
                         }
                     }
 
-                    binaries
+                    sub_binaries
                 }
                 _ => {
                     vec![nil; series.len()]

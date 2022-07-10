@@ -47,8 +47,9 @@ dependencies = [
 [[package]]
 name = "arrow2"
 version = "0.12.0"
-source = "git+https://github.com/jorgecarleitao/arrow2?rev=f5f6b7e3aa10b80dc574abacf96b30e0927410fe#f5f6b7e3aa10b80dc574abacf96b30e0927410fe"
+source = "git+https://github.com/ritchie46/arrow2?branch=polars#1bdb69cdc65dc936ee5e4be3f268ac16b98bc90b"
 dependencies = [
+ "ahash",
  "arrow-format",
  "bytemuck",
  "chrono",
@@ -278,9 +279,9 @@ checksum = "74721d007512d0cb3338cd20f0654ac913920061a4c4d0d8708edb3f2a698c0c"
 
 [[package]]
 name = "hashbrown"
-version = "0.12.1"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db0d4cf898abf0081f964436dc980e96670a0f36863e4b83aaacdb65c9d7ccc3"
+checksum = "607c8a29735385251a339424dd462993c0fed8fa09d378f259377df08c126022"
 dependencies = [
  "ahash",
  "rayon",
@@ -467,9 +468,9 @@ checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
 name = "memmap2"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5172b50c23043ff43dd53e51392f36519d9b35a8f3a410d30ece5d1aedd58ae"
+checksum = "3a79b39c93a7a5a27eeaf9a23b5ff43f1b9e0ad6b1cdd441140ae53c35613fc7"
 dependencies = [
  "libc",
 ]
@@ -643,7 +644,7 @@ dependencies = [
 [[package]]
 name = "polars"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "polars-core",
  "polars-io",
@@ -655,7 +656,7 @@ dependencies = [
 [[package]]
 name = "polars-arrow"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "arrow2",
  "hashbrown",
@@ -666,7 +667,7 @@ dependencies = [
 [[package]]
 name = "polars-core"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "ahash",
  "anyhow",
@@ -690,7 +691,7 @@ dependencies = [
 [[package]]
 name = "polars-io"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "ahash",
  "anyhow",
@@ -715,7 +716,7 @@ dependencies = [
 [[package]]
 name = "polars-lazy"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "ahash",
  "glob",
@@ -732,7 +733,7 @@ dependencies = [
 [[package]]
 name = "polars-ops"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "polars-arrow",
  "polars-core",
@@ -741,7 +742,7 @@ dependencies = [
 [[package]]
 name = "polars-time"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "chrono",
  "lexical",
@@ -753,7 +754,7 @@ dependencies = [
 [[package]]
 name = "polars-utils"
 version = "0.22.6"
-source = "git+https://github.com/pola-rs/polars#029146346f71ad98c102c1182303497996832850"
+source = "git+https://github.com/pola-rs/polars#9344555b3133626b56a5bf6e207d347f9badbd8e"
 dependencies = [
  "parking_lot",
  "rayon",
@@ -1003,6 +1004,7 @@ dependencies = [
 name = "snowflake_arrow"
 version = "0.1.0"
 dependencies = [
+ "ahash",
  "anyhow",
  "chrono",
  "polars",
