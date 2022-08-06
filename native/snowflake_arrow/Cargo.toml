@@ -12,7 +12,7 @@ crate-type = ["cdylib"]
 [dependencies]
 rustler = { git = "https://github.com/rusterlium/rustler" }
 rustler_sys = { git = "https://github.com/rusterlium/rustler" }
-polars = { git = "https://github.com/pola-rs/polars", features = ["simd", "performant", "dtype-full", "ipc_streaming"]}
+polars = { version = "0.23.1", features = ["dtype-full", "ipc_streaming"]}
 chrono = "0.4"
 thiserror = "1"
 anyhow = "1"

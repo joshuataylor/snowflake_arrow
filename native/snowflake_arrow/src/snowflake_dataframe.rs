@@ -6,7 +6,6 @@ use crate::rustler_helper::atoms::{
 use chrono::{Datelike, Timelike};
 use polars::datatypes::DataType;
 use polars::export::arrow::array::Array;
-use polars::prelude::ChunkLen;
 use rustler::types::atom;
 use rustler::types::atom::nil;
 use rustler::wrapper::list::make_list;
