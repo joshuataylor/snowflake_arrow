@@ -4,10 +4,12 @@ defmodule SnowflakeArrow.MixProject do
   def project do
     [
       app: :snowflake_arrow,
+      name: "snowflake_arrow",
+      description: "Snowflake specific Arrow implementation",
       version: "0.1.0",
       elixir: "~> 1.13",
-      start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package(),
     ]
   end
 
@@ -21,6 +23,20 @@ defmodule SnowflakeArrow.MixProject do
     [
       {:rustler, "~> 0.25.0"},
       {:benchee, "~> 1.1", optional: true}
+    ]
+  end
+
+  defp package do
+    [
+      files: [
+        "lib",
+        "native",
+        "mix.exs",
+        "LICENSE"
+      ],
+      licenses: ["Apache License 2.0"],
+      links: %{"GitHub" => "https://github.com/joshuataylor/snowflake_arrow"},
+      maintainers: ["Joshua Taylor"]
     ]
   end
 end
