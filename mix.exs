@@ -9,7 +9,7 @@ defmodule SnowflakeArrow.MixProject do
       version: "0.1.0",
       elixir: "~> 1.13",
       deps: deps(),
-      package: package(),
+      package: package()
     ]
   end
 
