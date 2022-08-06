@@ -9,7 +9,6 @@ on:
 env:
   ELIXIR_VERSION: 1.13
   OTP_VERSION: 24.2
-  EXPLORER_BUILD: true
   MIX_ENV: test
 
 jobs:
@@ -33,7 +32,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            native/explorer/target/
+            native/snowflake_arrow/target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - uses: actions-rs/toolchain@v1
         with:
